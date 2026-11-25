@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title data-brand="platform" data-brand-suffix=" Changelog">CompChemX Changelog</title>
+<title data-brand="platform" data-brand-suffix=" Changelog, Reference and Citation">CompChemX Changelog, Reference and Citation</title>
 <link rel="icon" href="../shared/favicon.svg?v=0.1.0" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <script src="../shared/theme.js?v=0.1.0"></script>
@@ -35,7 +35,12 @@ h1{margin:40px 0 8px;font-size:clamp(26px,4.5vw,36px);line-height:1.15;letter-sp
 .filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
 .filters button{height:28px;padding:0 11px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:14px;font:500 12.5px var(--ui);cursor:pointer}
 .filters button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
-section.tool{margin:0 0 36px}
+.jump{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+.jump a{height:28px;padding:0 11px;display:inline-flex;align-items:center;border:1px solid var(--line);color:var(--muted);border-radius:14px;font:500 12.5px var(--ui);text-decoration:none}
+.jump a:hover{border-color:var(--accent);color:var(--accent)}
+.refs{margin:0;padding-left:22px;font-size:14px}
+.refs li{margin:0 0 9px;padding-left:4px}.refs li::marker{color:var(--muted);font-family:var(--mono);font-size:12.5px}
+section.tool{margin:0 0 36px;scroll-margin-top:16px}
 section.tool>h2{display:flex;align-items:baseline;gap:10px;margin:0 0 4px;font-size:20px;font-weight:600}
 .cur{font:500 11.5px var(--mono);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:2px 8px}
 .about{margin:0 0 14px;color:var(--muted);font-size:14px}
@@ -57,16 +62,32 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:v
     <span class="sp"></span>
     <button class="btn" id="theme" type="button">Light mode</button>
   </header>
-  <h1>Changelog</h1>
-  <p class="lead">What CompChemX does and has gained so far.</p>
+  <h1>Changelog, Reference and Citation</h1>
+  <p class="lead">What CompChemX does and has gained so far, the references, and how to cite our work.</p>
+  <nav class="jump" aria-label="On this page"><a href="#changelog">Changelog</a><a href="#references">Reference</a><a href="#cite">Cite our work</a></nav>
   <div class="filters" id="filters" role="group" aria-label="Show"></div>
-  <div id="log"></div>
+  <div id="changelog"><div id="log"></div></div>
+  <section class="tool" id="references">
+    <h2>Reference</h2>
+    <p class="about">Listed in no particular order.</p>
+    <ol class="refs">
+      <li>Warren GL, Andrews CW, Capelli AM, Clarke B, LaLonde J, Lambert MH, et al. A critical assessment of docking programs and scoring functions. J Med Chem. 2006;49(20):5912-31.</li>
+      <li>Ferrara P, Gohlke H, Price DJ, Klebe G, Brooks CL 3rd. Assessing scoring functions for protein-ligand interactions. J Med Chem. 2004;47(12):3032-47.</li>
+      <li>Kam CMT, Tauber AL, Zunk MS, McDermott CM, Levonis SM, Schweiker SS. Novel inhibitors of PARP1 and PARP14: design, synthesis, and potentiation of cisplatin efficacy in cancer. Future Med Chem. 2025;17(1):35-58. doi:10.1080/17568919.2024.2437972. PMID: 39691063; PMCID: PMC11703142.</li>
+      <li>Kam CM, Tauber AL, Levonis SM, Schweiker SS. Design, synthesis and evaluation of potential inhibitors for poly(ADP-ribose) polymerase members 1 and 14. Future Med Chem. 2020;12(24):2179-90. doi:10.4155/fmc-2020-0218.</li>
+      <li>Kam CM, Tauber AL, Oosthuizen DL, Levonis SM, Schweiker SS. In silico family-wide profiling and 3D modelling of the poly(ADP-ribose) polymerase superfamily. Future Med Chem. 2020;12(23):2105-22. doi:10.4155/fmc-2020-0274.</li>
+    </ol>
+  </section>
+  <section class="tool" id="cite">
+    <h2>Cite our work</h2>
+    <p class="note" style="margin-bottom:0">Citation details for CompChemX are to be confirmed.</p>
+  </section>
 </div>
 <script>
 /* Newest release first inside each tool. rel = [heading, date, [items]] */
 const LOG = [
   { id: "site", name: cpName("site"), about: "Browser-based computational chemistry: draw molecules and dock them into proteins. Everything runs in your browser.", rel: [
-    ["0.1.0", "2026-11-25", ["CompChemX Draw: 2D structure editor. Rings, chains, charges, stereochemistry (wedge and hash), arrows and text; ring templates and common groups; rotate and align tools with undo; export as molfile, SVG, PNG, Word or SMILES.","SMILES in and out: copy the SMILES of any drawn structure, or paste SMILES, one per line, to have it drawn and laid out automatically.","Offline IUPAC naming for chains, rings, benzene derivatives, esters and amides, with formula and mass. Fused and heterocyclic ring systems are not named yet.","3D view of any drawn structure with hydrogens and a force-field geometry; ball-and-stick or sticks, bond lengths and angles, save as SDF or PNG.","CompChemX Dock: draw or paste compounds, build them in 3D, minimise, load a protein from pasted PDB text, detect or set the binding pocket and dock.","AutoDock Vina scoring (Vina 1.2.7 terms and weights) with a grid search and exact re-optimisation of the kept poses. Imatinib in 1IEP: crystal pose -12.53 vs -12.51 kcal/mol in Vina.","Results in kcal/mol or kJ/mol: pose images, H-bonds, contacts, 3D pose viewer with a protein surface and clipping plane, key residues next to the natural ligand, CSV export and an AutoDock-GPU job sheet.","Docking self-check: takes the ligand bound in the PDB, redocks it into its own site and reports the RMSD of the closest returned pose to the crystal pose (heavy atoms, symmetry-aware, limit 2.2 Å). If it is above the limit it reruns with new seeds, up to 10 attempts, and the best seed is used for your docking.","Drug-likeness panel: Lipinski rule of five, Veber, Egan, TPSA, MLOGP, ESOL solubility and a radar chart (estimates).","Dark and light themes, a Home button and version chip on every tool, and a browser-tab icon."]]] }
+    ["0.1.0", "2026-11-25", ["CompChemX Draw: 2D structure editor. Rings, chains, charges and stereochemistry (wedge and hash), arrows and text; ring templates and common groups; export as molfile, SVG, PNG, Word or SMILES.","Draw: select a ring (with its simple substituents) and drag the round handle to rotate it about its attachment atom, with 15° snapping (Alt for fine steps). With a ring tool, press where the ring goes, hold and drag to turn it, release to place (around the atom for a spiro ring).","Draw: Clear all erases the page after a confirmation, and Undo brings it back. Shift + C / B / S / E sets the hovered atom (or the atom tool) to Cl / Br / Si / Se.","SMILES in and out: copy the SMILES of any drawn structure (SMILES button and Structure panel), or paste SMILES, one per line, to have it drawn. Imported structures are laid out cleanly with no overlapping atoms, ring systems wound the right way and crowded substituents untangled; bridged cages remain approximate. Aromatic rings are drawn as Kekulé structures; stereo marks are not read or written.","Offline IUPAC naming, no network needed: chains, rings, benzene with substituents, esters, amides with N-substituents, retained names, lowest-locant numbering, alphabetised prefixes and nested brackets, with formula and mass. Fused and heterocyclic ring systems are not named yet.","3D view of any drawn structure with hydrogens and a force-field geometry; ball-and-stick or sticks, rotate and zoom, click an atom for its geometry (tetrahedral, trigonal planar, bent...) with measured bond lengths and angles; save as SDF or PNG.","CompChemX Dock: draw or paste compounds, build them in 3D (conformer search), minimise with a force field, load a protein, detect or set the binding pocket and dock. Whatever is drawn in Draw flows into Dock.","Target: paste PDB text (Display Files > Legacy PDB, copy the entire page, paste). Waters are removed. Molecules found in the structure are listed as ligands (e.g. Ligand 1 - STI), each with a Box on this button; key residues next to the natural ligand are marked and can be edited.","Your own molecules are called compounds (library, model step, results, messages); the word ligand is used only for molecules found bound in the PDB structure.","AutoDock Vina scoring (Vina 1.2.7 terms and weights): grid search at 0.375 Å, then exact re-optimisation and scoring of the kept poses. Imatinib in 1IEP: crystal pose -12.53 vs -12.51 kcal/mol in Vina; redock -13.3 vs -13.26.","Scores in kcal/mol (default) or kJ/mol, switchable and remembered. A scoring explanation (AutoDock Vina) is on the Dock page.","Results: your docked compounds are always listed (bold table header, kcal/mol, kJ/mol, H-bonds, RMSD to the crystal pose where one exists), with pose images, CSV export and an AutoDock-GPU job sheet for running outside the browser.","Interaction list for the selected pose: H-bonds, hydrophobic contacts and π–π stacking (ring centroids ≤ 3.8 Å, planes within 30°) per residue, with atoms and distances in Å. Click a residue to highlight it in 3D (residue sticks, label and its interaction lines in bright lime green); click again to clear. Key residues are bold and underlined.","3D pose viewer: protein surface with smooth atom colouring, clipping plane and flat cap on cut faces; thicker interaction lines (H-bonds blue, hydrophobic green, π–π purple) and higher-contrast colours in light mode.","Docking self-check: takes the ligand bound in the PDB (its HETATM group, with bond orders worked out from the geometry), redocks it into its own site and reports the RMSD of the closest returned pose to the crystal pose (heavy atoms, symmetry-aware, so flipped phenyl rings count correctly). Pass limit 2.2 Å.","Self-check retries: if no pose is within the limit it reruns with new seeds, up to 10 attempts, with more runs each time. The best seed is then used for your docking run. Optionally run it before every docking, or load the bound ligand as an SDF for your own targets; if the structure holds several ligands, pick which one to use.","Self-check result: the banner \"DOCKING SELF CHECK: RMSD = X Angstroms\" (PASS or FAIL) sits at the top of the results with the closest pose shown like any other result (rank, score, interactions). Select it to see it in 3D with the crystal pose drawn in thin grey. Your own docked compounds stay listed so you can click back to them.","Drug-likeness panel: Lipinski rule of five, Veber, Egan, TPSA, MLOGP, ESOL solubility and a SwissADME-style radar (estimates).","Console showing progress, hidden when idle and pinnable. PDB and SDF saves keep their real file names.","Shared dark (default) and light theme that is remembered, a Home button and version chip on every tool, a changelog page, and a browser-tab icon."]]] }
 ];
 const $ = s => document.querySelector(s), esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let show = 'all';

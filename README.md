@@ -9,7 +9,7 @@ Browser-based chemistry tools. Static files only: no build step, no server code,
 | Home | `index.html` | Landing page with a card for each tool |
 | CompChemX Draw | `draw/` | 2D chemical structure editor: offline IUPAC names, SMILES in and out, 3D view |
 | CompChemX Dock | `dock/` | Draw → 3D → minimise → define pocket → dock; kcal/mol or kJ/mol, pose images, drug-likeness |
-| Changelog | `changelog/` | What changed in each tool; add an entry here with every release |
+| Changelog, Reference and Citation | `changelog/` | What changed (add an entry with every release), the references, and how to cite our work |
 | Shared | `shared/` | `theme.js`, `nav.js`, `versions.js` and one copy of three.js r128 |
 
 ## Run locally
