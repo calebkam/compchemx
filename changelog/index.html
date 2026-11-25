@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title data-brand="platform" data-brand-suffix=" Changelog">CompChemX Changelog</title>
+<link rel="icon" href="../shared/favicon.svg?v=0.1.0" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="../shared/theme.js?v=0.1.0"></script>
+<script src="../shared/brand.js?v=0.1.0"></script>
+<script src="../shared/versions.js?v=0.1.0"></script>
+<meta name="color-scheme" content="dark light">
+<style>
+:root{
+  --bg:#1A1918; --panel:#232220; --paper:#2B2926; --line:#3A3835; --fg:#ECE8E1; --muted:#9A958B;
+  --accent:#D97757; --accent-soft:rgba(217,119,87,.16); --accent-fg:#1F0E07; color-scheme:dark;
+  --ui:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+:root[data-theme="light"]{
+  --bg:#F0EEE6; --panel:#FAF9F5; --paper:#FFFFFF; --line:#DDD9CC; --fg:#1F1E1D; --muted:#6B665C;
+  --accent:#C15F3C; --accent-soft:rgba(193,95,60,.12); --accent-fg:#FFFFFF; color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--ui);padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:860px;margin:0 auto;padding-block:20px 56px}
+header{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+header .sp{flex:1}
+.btn{height:30px;padding:0 12px;display:inline-flex;align-items:center;border:1px solid var(--line);background:var(--paper);border-radius:6px;cursor:pointer;color:inherit;font:inherit;font-size:13px;text-decoration:none}
+.btn:hover{border-color:var(--accent)}
+h1{margin:40px 0 8px;font-size:clamp(26px,4.5vw,36px);line-height:1.15;letter-spacing:-.02em;font-weight:600}
+.lead{margin:0 0 22px;color:var(--muted);max-width:62ch}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 26px}
+.filters button{height:28px;padding:0 11px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:14px;font:500 12.5px var(--ui);cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+section.tool{margin:0 0 36px}
+section.tool>h2{display:flex;align-items:baseline;gap:10px;margin:0 0 4px;font-size:20px;font-weight:600}
+.cur{font:500 11.5px var(--mono);color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:2px 8px}
+.about{margin:0 0 14px;color:var(--muted);font-size:14px}
+.rel{border-left:2px solid var(--line);padding:0 0 14px 16px;margin-left:4px;position:relative}
+.rel::before{content:"";position:absolute;left:-6px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+.rel h3{margin:0 0 4px;font-size:14.5px;font-weight:600;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.rel h3 time{font:12px var(--mono);color:var(--muted);font-weight:400}
+.rel ul{margin:0;padding-left:18px;color:var(--fg)}
+.rel li{margin:2px 0;font-size:14px}
+.rel li::marker{color:var(--muted)}
+.note{color:var(--muted);font-size:13px;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;margin:0 0 24px}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="btn" href="../" id="home">&larr; Home</a>
+    <span class="sp"></span>
+    <button class="btn" id="theme" type="button">Light mode</button>
+  </header>
+  <h1>Changelog</h1>
+  <p class="lead">What CompChemX does and has gained so far.</p>
+  <div class="filters" id="filters" role="group" aria-label="Show"></div>
+  <div id="log"></div>
+</div>
+<script>
+/* Newest release first inside each tool. rel = [heading, date, [items]] */
+const LOG = [
+  { id: "site", name: cpName("site"), about: "Browser-based computational chemistry: draw molecules and dock them into proteins. Everything runs in your browser.", rel: [
+    ["0.1.0", "2026-11-25", ["CompChemX Draw: 2D structure editor. Rings, chains, charges, stereochemistry (wedge and hash), arrows and text; ring templates and common groups; rotate and align tools with undo; export as molfile, SVG, PNG, Word or SMILES.","SMILES in and out: copy the SMILES of any drawn structure, or paste SMILES, one per line, to have it drawn and laid out automatically.","Offline IUPAC naming for chains, rings, benzene derivatives, esters and amides, with formula and mass. Fused and heterocyclic ring systems are not named yet.","3D view of any drawn structure with hydrogens and a force-field geometry; ball-and-stick or sticks, bond lengths and angles, save as SDF or PNG.","CompChemX Dock: draw or paste compounds, build them in 3D, minimise, load a protein from pasted PDB text, detect or set the binding pocket and dock.","AutoDock Vina scoring (Vina 1.2.7 terms and weights) with a grid search and exact re-optimisation of the kept poses. Imatinib in 1IEP: crystal pose -12.53 vs -12.51 kcal/mol in Vina.","Results in kcal/mol or kJ/mol: pose images, H-bonds, contacts, 3D pose viewer with a protein surface and clipping plane, key residues next to the natural ligand, CSV export and an AutoDock-GPU job sheet.","Docking self-check: takes the ligand bound in the PDB, redocks it into its own site and reports the RMSD of the closest returned pose to the crystal pose (heavy atoms, symmetry-aware, limit 2.2 Å). If it is above the limit it reruns with new seeds, up to 10 attempts, and the best seed is used for your docking.","Drug-likeness panel: Lipinski rule of five, Veber, Egan, TPSA, MLOGP, ESOL solubility and a radar chart (estimates).","Dark and light themes, a Home button and version chip on every tool, and a browser-tab icon."]]] }
+];
+const $ = s => document.querySelector(s), esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let show = 'all';
+function render() {
+  $('#log').innerHTML = LOG.filter(t => show === 'all' || t.id === show).map(t => {
+    const v = (window.CP_VERSIONS || {})[t.id];
+    return '<section class="tool"><h2>' + esc(t.name) + (v ? '<span class="cur">' + esc(window.cpVer ? window.cpVer(v) : v) + '</span>' : '') + '</h2><p class="about">' + esc(t.about) + '</p>' +
+      t.rel.map(r => '<div class="rel"><h3>' + esc(r[0]) + '<time>' + esc(r[1]) + '</time></h3><ul>' + r[2].map(i => '<li>' + esc(i) + '</li>').join('') + '</ul></div>').join('') + '</section>';
+  }).join('');
+}
+$('#filters').innerHTML = [['all', 'All']].concat(LOG.map(t => [t.id, t.name])).map(f => '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (f[0] === show) + '">' + esc(f[1]) + '</button>').join('');
+$('#filters').style.display = LOG.length < 2 ? 'none' : '';
+$('#filters').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; show = b.dataset.f; document.querySelectorAll('#filters button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); render(); });
+render();
+if (!window.CPTheme) { const R = document.documentElement; R.dataset.theme = 'dark'; window.CPTheme = { get: () => R.dataset.theme, toggle() { R.dataset.theme = R.dataset.theme === 'dark' ? 'light' : 'dark'; window.dispatchEvent(new Event('cp-theme')); } }; }
+const tb = $('#theme'), sync = () => { const d = window.CPTheme.get() === 'dark'; tb.textContent = d ? 'Light mode' : 'Dark mode'; };
+tb.addEventListener('click', () => window.CPTheme.toggle()); window.addEventListener('cp-theme', sync); sync();
+</script>
+</body>
+</html>
