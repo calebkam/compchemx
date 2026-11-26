@@ -44,7 +44,7 @@ const A = {
   box: null, boxMode: 'auto', example: null, results: {}, running: false, cancel: false, progress: null, log: [], pose: { id: null, mode: 0 },
   vw: { inter: true, H: true, trace: true, box: true, key: true, surf: false, only: false }, keyRes: new Map(), keyNear: new Set(), keyOff: new Set(), keyDist: 4, posePts: null, viewer: null, viewerErr: '', busy: '',
   natives: [], check: null,
-  o: { selfFirst: false, runs: 32, effort: 1, modes: 9, rangeKJ: 12.6, spacing: 0.375, sd: 100, cg: 10, step: 0.02, conf: 10, conv: true }
+  o: { selfFirst: false, scMeasure: 'rmsd', runs: 32, effort: 1, modes: 9, rangeKJ: 12.6, spacing: 0.375, sd: 100, cg: 10, step: 0.02, conf: 10, conv: true }
 };
 const sel = () => A.ligs.find(l => l.id === A.sel) || null;
 /* Ligand selector text: "Compound X - name", X = position in the library. The stored name stays editable and is shown without any "Compound N" prefix. */
@@ -208,6 +208,8 @@ function propsCard(l) {
 /* ===================== receptor ===================== */
 async function loadReceptorText(text, name) {
   A.check = null; A.scSel = null; A.hetNames = {};
+  const hd = text.match(/^HEADER.*\s(\w{4})\s*$/m), rs = text.match(/^REMARK\s+2\s+RESOLUTION\.\s+([\d.]+)/m);
+  const pid = hd ? hd[1].toUpperCase() : ''; if (pid !== A.pdbId) A.map = null; A.pdbId = pid; A.pdbRes = rs ? parseFloat(rs[1]) : 0;
   for (const m of text.matchAll(/^HETNAM\s+(?:\d+\s+)?(\w{1,3})\s+(.+)$/gm)) A.hetNames[m[1]] = ((A.hetNames[m[1]] || '') + ' ' + m[2].trim()).trim();
   const atoms = Dock.parsePDB(text);
   if (!atoms.some(a => !a.het || Dock.STD.has(a.res))) { toast('No protein atoms found in that file.'); return; }
@@ -707,13 +709,30 @@ function scCandidates() {
   if (!out.length && A.example) out.push({ id: 'ex', kind: 'ex', label: 'Imatinib (example crystal pose)', sub: 'example' });
   return out;
 }
+const RSR_ABS = 0.40, RSR_TOL = 0.10; /* a redocked pose passes the RSR test at or below max(0.40, crystal RSR + 0.10): the density fit of a pose in the right site, allowing for the crystal ligand itself fitting poorly */
+function setMap(buf, name) {
+  const g = Density.parseMap(buf); A.map = { g, name, size: buf.byteLength }; clog('Electron density map loaded: ' + name + ' (' + g.dims.join('\u00d7') + ' grid, cell ' + g.cell.slice(0, 3).map(v => v.toFixed(1)).join(' \u00d7 ') + ' Å).'); return A.map;
+}
+async function loadMapFile(file) {
+  try { setMap(await file.arrayBuffer(), file.name); toast('Map loaded: ' + file.name); } catch (e) { toast('Could not read that map: ' + e.message, 7000); }
+  renderPanel();
+}
+async function fetchMap() {
+  const id = (A.pdbId || '').toLowerCase(); if (!id) return toast('The PDB ID was not found in the pasted text (HEADER line). Load a map file instead.', 6000);
+  A.fetching = true; renderPanel(); conOpen(true); clog('Fetching the 2Fo-Fc map for ' + id.toUpperCase() + ' (only the PDB ID is sent) ...');
+  const urls = ['https://www.ebi.ac.uk/pdbe/entry-files/' + id + '.ccp4', 'https://www.ebi.ac.uk/pdbe/entry-files/download/' + id + '.ccp4']; let ok = false;
+  for (const u of urls) { try { const r = await fetch(u); if (!r.ok) throw new Error('HTTP ' + r.status); setMap(await r.arrayBuffer(), id.toUpperCase() + '.ccp4 (PDBe)'); ok = true; break; } catch (e) { clog('  ' + u + ': ' + e.message, 'err'); } }
+  A.fetching = false; if (!ok) toast('Could not download a map for ' + id.toUpperCase() + '. Download the 2Fo-Fc map (CCP4 format) yourself and use "Load map file".', 9000); renderPanel();
+}
+const rsrAtoms = (d, pos) => d.heavy.map(i => ({ xyz: [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]], el: d.mol.atoms[i].el }));
 function buildCheckLig(c) {
   if (c.kind === 'ex') { const l = addExampleLigand(); return { id: 'selfcheck', name: l.name, label: ligLabel(l), mol: l.mol, ref: l.ref, state: '3d', crystal: true }; }
   if (c.kind === 'lig') return { id: 'selfcheck', name: c.l.name, label: ligLabel(c.l), mol: c.l.mol, ref: c.l.ref, state: '3d', crystal: true };
   if (A.keepHet.has(c.g.id)) throw new Error(c.label + ' is kept as part of the target, so redocking it would clash with itself. Untick it in the Target step first.');
   const p = Chem.fromHet(c.g.atoms), mol = Chem.prepare(p); mol.T = Chem.buildTopology(mol);
   const f = Chem.formula(mol);
-  return { id: 'selfcheck', name: c.g.res, label: c.label, mol, ref: mol.atoms.map(a => [a.x, a.y, a.z]), state: '3d', crystal: true, fm: f.text, note: p.note };
+  const bs = c.g.atoms.filter(a => a.el !== 'H' && isFinite(a.b)).map(a => a.b);
+  return { id: 'selfcheck', name: c.g.res, label: c.label, mol, ref: mol.atoms.map(a => [a.x, a.y, a.z]), state: '3d', crystal: true, fm: f.text, note: p.note, B: bs.length ? bs.reduce((x, y) => x + y, 0) / bs.length : 20 };
 }
 function addNativeFromSDF(text, fname) {
   let parsed, mol; try { parsed = Chem.parseMol(text); mol = Chem.prepare(parsed); mol.T = Chem.buildTopology(mol); } catch (e) { toast('Could not read that ligand: ' + e.message); return null; }
@@ -744,20 +763,30 @@ async function selfCheck(opt = {}) {
   try {
     const d = ligForDock(l), keys = [...new Set(d.types.filter(Boolean))], t0 = performance.now();
     const G = await Dock.buildGrids(A.rec, box, keys, { spacing: A.o.spacing }, p => { A.progress.grid = p; prog(); conProgress(p); }, () => A.cancel);
+    let meas = A.o.scMeasure || 'rmsd', rsrRef = NaN, rsrLimit = NaN; const rsrOpt = { res: A.pdbRes || 2, B: l.B || 20 };
+    if (meas !== 'rmsd' || A.map) {
+      if (!A.map) { clog('  No electron density map is loaded, so the check uses RMSD only.', 'err'); meas = 'rmsd'; }
+      else { const cr = Density.rsr(A.map.g, rsrAtoms(d, l.ref.flat()), null, rsrOpt); rsrRef = cr.rsr; rsrLimit = Math.max(RSR_ABS, rsrRef + RSR_TOL);
+        if (!isFinite(rsrRef)) { clog('  The crystal ligand is outside the loaded map, so RSR cannot be used. Using RMSD only.', 'err'); meas = 'rmsd'; rsrRef = NaN; }
+        else clog('  Crystal ligand RSR against the map: ' + rsrRef.toFixed(3) + ' (resolution ' + rsrOpt.res + ' Å, B ' + rsrOpt.B.toFixed(0) + '). A docked pose passes the RSR test at or below ' + rsrLimit.toFixed(3) + '.'); }
+    }
     const attempts = [], results = []; let pass = false;
     for (let k = 0; k < SC_MAX && !pass; k++) {
       const runs = Math.min(256, A.o.runs * (k < 3 ? 1 << k : 8)), effort = A.o.effort * (k ? 1.5 : 1), seed = 101 + k * 37, t1 = performance.now();
       A.progress.name = 'Self-check, attempt ' + (k + 1) + ' of ' + SC_MAX; A.progress.lig = 0; prog(); clog('Attempt ' + (k + 1) + ': ' + runs + ' runs, effort ' + effort + ', seed ' + seed);
       const res = await Dock.dockLigand(d, G, { runs, effort, modes: A.o.modes, range: A.o.rangeKJ / 4.184, seed }, { progress: f => { A.progress.lig = f; prog(); conProgress(f); }, cancelled: () => A.cancel });
-      const rm = res.modes.map(m => Dock.symRmsd(d, m.pos, l.ref)), bst = Math.min(...rm);
-      const at = { n: k + 1, runs, effort, seed, top: rm[0], best: bst, bestRank: rm.indexOf(bst) + 1, kcal: res.modes[0].kcal, time: (performance.now() - t1) / 1000, poses: res.modes.length };
-      attempts.push(at); results.push(res); pass = at.best <= RMSD_LIMIT;
-      clog('  closest pose RMSD ' + at.best.toFixed(2) + ' Å (pose ' + at.bestRank + ' of ' + at.poses + '), top-scoring pose ' + at.top.toFixed(2) + ' Å, score of top pose ' + at.kcal.toFixed(2) + ' kcal/mol, ' + at.time.toFixed(0) + ' s', pass ? 'ok' : 'err');
-      if (!pass && k < SC_MAX - 1) clog('  No pose is within ' + RMSD_LIMIT + ' Å, so the search is rerun with a new seed (up to ' + SC_MAX + ' attempts).');
+      const rm = res.modes.map(m => Dock.symRmsd(d, m.pos, l.ref)), rs = isFinite(rsrRef) ? res.modes.map(m => Density.rsr(A.map.g, rsrAtoms(d, m.pos), rsrAtoms(d, l.ref.flat()), rsrOpt).rsr) : null;
+      const pick = meas === 'rsr' ? rs.reduce((a, v, i) => (v < rs[a] || !isFinite(rs[a]) ? i : a), 0) : rm.indexOf(Math.min(...rm)), bst = rm[pick];
+      const at = { n: k + 1, runs, effort, seed, top: rm[0], best: bst, bestRank: pick + 1, kcal: res.modes[0].kcal, time: (performance.now() - t1) / 1000, poses: res.modes.length, rsr: rs ? rs[pick] : NaN, topRsr: rs ? rs[0] : NaN };
+      const okR = rs ? at.rsr <= rsrLimit : true, okM = bst <= RMSD_LIMIT; at.viol = Math.max(meas === 'rsr' ? 0 : bst / RMSD_LIMIT, rs && meas !== 'rmsd' ? at.rsr / rsrLimit : 0);
+      attempts.push(at); results.push(res); pass = meas === 'rmsd' ? okM : meas === 'rsr' ? okR : (okM && okR);
+      if (rs) clog('  RSR of pose ' + at.bestRank + ': ' + at.rsr.toFixed(3) + ' (top-scoring pose ' + at.topRsr.toFixed(3) + '; crystal ' + rsrRef.toFixed(3) + ')');
+      clog('  ' + (meas === 'rsr' ? 'lowest-RSR pose' : 'closest pose') + ' RMSD ' + at.best.toFixed(2) + ' Å (pose ' + at.bestRank + ' of ' + at.poses + '), top-scoring pose ' + at.top.toFixed(2) + ' Å, score of top pose ' + at.kcal.toFixed(2) + ' kcal/mol, ' + at.time.toFixed(0) + ' s', pass ? 'ok' : 'err');
+      if (!pass && k < SC_MAX - 1) clog('  ' + (meas === 'rsr' ? 'No pose fits the density as well as required' : meas === 'both' ? 'No pose passes both tests' : 'No pose is within ' + RMSD_LIMIT + ' Å') + ', so the search is rerun with a new seed (up to ' + SC_MAX + ' attempts).');
     }
-    const fi = pass ? attempts.length - 1 : attempts.reduce((a, b, i) => (b.best < attempts[a].best ? i : a), 0), fin = attempts[fi], res = results[fi];
-    l.dock = d; const best = res.modes[fin.bestRank - 1]; best.inter = Dock.interactions(d, A.rec, best.pos); best.rmsdRef = fin.best;
-    A.check = { id: 'selfcheck', lig: l, label: l.label, res: { modes: [best], nrot: res.nrot, runs: res.runs }, limit: RMSD_LIMIT, attempts, pass, fin, time: (performance.now() - t0) / 1000, symmetry: Dock.automorphisms(d).length };
+    const fi = pass ? attempts.length - 1 : attempts.reduce((a, b, i) => (b.viol < attempts[a].viol ? i : a), 0), fin = attempts[fi], res = results[fi];
+    l.dock = d; const best = res.modes[fin.bestRank - 1]; best.inter = Dock.interactions(d, A.rec, best.pos); best.rmsdRef = fin.best; if (isFinite(fin.rsr)) best.rsr = fin.rsr;
+    A.check = { id: 'selfcheck', lig: l, label: l.label, res: { modes: [best], nrot: res.nrot, runs: res.runs }, limit: RMSD_LIMIT, meas, rsrRef, rsrLimit, mapName: A.map ? A.map.name : '', attempts, pass, fin, time: (performance.now() - t0) / 1000, symmetry: Dock.automorphisms(d).length };
     A.pose = { id: 'selfcheck', mode: 0 };
     try { if (ensureViewer()) { showPose(l, best, true); best.img = A.viewer.snapshot(336, 252); } } catch (e) { console.error(e); }
     status = pass ? 'pass' : 'fail';
@@ -768,13 +797,17 @@ async function selfCheck(opt = {}) {
 }
 function viewSelfCheck() { A.pose = { id: 'selfcheck', mode: 0 }; go('res'); }
 /* One line at the top of the results: DOCKING SELF CHECK: RMSD = XX Angstroms */
+function scTitle(c) {
+  const r = 'RMSD = ' + c.fin.best.toFixed(2) + ' Angstroms', s = isFinite(c.fin.rsr) ? 'RSR = ' + c.fin.rsr.toFixed(2) + ' (crystal ' + c.rsrRef.toFixed(2) + ')' : '';
+  return 'DOCKING SELF CHECK: ' + (c.meas === 'rsr' ? s + ', ' + r : s ? r + ', ' + s : r);
+}
 function selfCheckBanner() {
   const c = A.check;
   const cl = scCandidates(), cu = cl.find(x => x.id === A.scSel) || cl[0];
   if (!c && cu && cu.cov) return h('div', { cls: 'scb none' }, h('span', { cls: 'scb-t', text: 'DOCKING SELF CHECK: not applicable' }), h('span', { cls: 'sub', style: 'white-space:normal', text: cu.label + ' is covalently bonded to ' + cu.cov.res + ' ' + cu.cov.resi + '; pick another ligand or load a free one as SDF' }));
   if (!c) return h('div', { cls: 'scb none' }, h('span', { cls: 'scb-t', text: 'DOCKING SELF CHECK: not run' }), h('button', { cls: 'btn sm', type: 'button', text: 'Run it', disabled: A.running || !scCandidates().length, on: { click: async () => { await selfCheck(); renderPanel(); } } }));
-  return h('div', { cls: 'scb ' + (c.pass ? 'pass' : 'fail') }, h('div', { cls: 'scb-t', text: 'DOCKING SELF CHECK: RMSD = ' + c.fin.best.toFixed(2) + ' Angstroms' }),
-    h('div', { cls: 'sub', style: 'white-space:normal', text: (c.pass ? 'PASS' : 'FAIL') + ' (limit ' + c.limit + ' Å) · ' + c.label + ' taken from the structure and redocked · ' + c.attempts.length + ' attempt' + (c.attempts.length > 1 ? 's' : '') }));
+  return h('div', { cls: 'scb ' + (c.pass ? 'pass' : 'fail') }, h('div', { cls: 'scb-t', text: scTitle(c) }),
+    h('div', { cls: 'sub', style: 'white-space:normal', text: (c.pass ? 'PASS' : 'FAIL') + ' (' + (c.meas === 'rsr' ? 'RSR limit ' + c.rsrLimit.toFixed(2) : c.meas === 'both' ? 'RMSD limit ' + c.limit + ' Å and RSR limit ' + c.rsrLimit.toFixed(2) : 'limit ' + c.limit + ' Å') + ') · ' + c.label + ' taken from the structure and redocked · ' + c.attempts.length + ' attempt' + (c.attempts.length > 1 ? 's' : '') }));
 }
 /* The best pose only, shown like any other docking result, at the top of the results. Click to view it in 3D with the crystal pose in grey. */
 function selfCheckPoseCard() {
@@ -783,7 +816,7 @@ function selfCheckPoseCard() {
     h('div', { cls: 'modes' }, h('div', { cls: 'mode' + (on ? ' on' : ''), title: 'Click to view this pose in 3D', on: { click: () => { A.pose = { id: 'selfcheck', mode: 0 }; refreshAll(); } } },
       m.img ? h('img', { src: m.img, alt: 'Best redocked pose of ' + c.label }) : h('div'),
       h('div', {}, h('div', { cls: 'aff' }, uTxt(m), h('small', { text: uName() })), h('div', { cls: 'sub', text: 'Closest pose to crystal (pose ' + m.rank + ' of ' + c.fin.poses + ') · ' + uAlt(m) }),
-        h('div', { cls: 'sub', text: 'RMSD to crystal ' + m.rmsdRef.toFixed(2) + ' Å · top-scoring pose ' + c.fin.top.toFixed(2) + ' Å' }),
+        h('div', { cls: 'sub', text: 'RMSD to crystal ' + m.rmsdRef.toFixed(2) + ' Å · top-scoring pose ' + c.fin.top.toFixed(2) + ' Å' + (isFinite(m.rsr) ? ' · RSR ' + m.rsr.toFixed(3) + ' (crystal ' + c.rsrRef.toFixed(3) + ')' : '') }),
         h('div', { cls: 'sub', text: m.inter.hbonds.length + ' H-bonds · ' + m.inter.hydRes + ' hydrophobic · ' + m.inter.pipi + ' π–π' })))),
     on ? h('p', { cls: 'note', text: 'In the 3D view the redocked pose is coloured and the crystal pose is thin grey.' }) : h('p', { cls: 'note', text: 'Select it to see it in 3D next to the crystal pose.' }));
 }
@@ -794,13 +827,19 @@ function selfCheckCard() {
   else if (cands.length > 1) sec.append(h('div', { cls: 'row' }, h('label', { text: 'Ligand' }), h('select', { disabled: A.running, 'aria-label': 'Ligand for the self-check', on: { change: e => { A.scSel = e.target.value; } } }, ...cands.map(x => h('option', { value: x.id, selected: cur && x.id === cur.id, text: x.label })))));
   else sec.append(h('p', { cls: 'sub', style: 'white-space:normal', text: 'Ligand: ' + cur.label + (cur.sub ? ' · ' + cur.sub : '') }));
   if (can && cur.cov) sec.append(h('p', { cls: 'note', text: cur.label + ' is covalently bonded to ' + cur.cov.res + ' ' + cur.cov.resi + ' (' + cur.cov.d.toFixed(2) + ' Å). A covalent ligand cannot be reproduced by non-covalent docking, so the self-check is skipped for it. Choose another ligand, or load a free one as SDF.' }));
+  const mapInp = h('input', { type: 'file', accept: '.ccp4,.map,.mrc', hidden: true, 'aria-label': 'Choose an electron density map', on: { change: e => { const f = e.target.files[0]; if (f) loadMapFile(f); e.target.value = ''; } } });
+  sec.append(h('div', { cls: 'row' }, h('label', { text: 'Measure' }), h('select', { disabled: A.running, 'aria-label': 'Self-check measure', on: { change: e => { A.o.scMeasure = e.target.value; renderPanel(); } } },
+    ...[['rmsd', 'RMSD (default)'], ['rsr', 'RSR (electron density)'], ['both', 'RMSD and RSR']].map(([v, t]) => h('option', { value: v, selected: (A.o.scMeasure || 'rmsd') === v, disabled: v !== 'rmsd' && !A.map, text: t })))));
+  sec.append(h('div', { cls: 'row', style: 'gap:6px;flex-wrap:wrap' }, h('button', { cls: 'btn', type: 'button', disabled: A.running || A.fetching || !A.pdbId, text: A.fetching ? 'Fetching ...' : 'Fetch map' + (A.pdbId ? ' for ' + A.pdbId : ''), title: 'Downloads the 2Fo-Fc map from PDBe. Only the PDB ID is sent.', on: { click: fetchMap } }),
+    h('button', { cls: 'btn', type: 'button', disabled: A.running, text: 'Load map file', title: 'CCP4 or MRC 2Fo-Fc map. The file stays on your computer.', on: { click: () => mapInp.click() } }), mapInp,
+    h('span', { cls: 'sub', style: 'white-space:normal', text: A.map ? 'Map: ' + A.map.name + (A.pdbRes ? ' · resolution ' + A.pdbRes + ' Å' : '') : 'RSR needs an X-ray 2Fo-Fc electron density map. Optional; RMSD works without it.' })));
   const inp = h('input', { type: 'file', accept: '.sdf,.mol', hidden: true, 'aria-label': 'Choose the bound ligand as SDF', on: { change: async e => { const f = e.target.files[0]; if (!f) return; const l = addNativeFromSDF(await f.text(), f.name); e.target.value = ''; if (l) { A.scSel = 'lig:' + l.id; clog('Loaded the bound ligand ' + ligLabel(l) + '.'); refreshAll(); } } } });
   sec.append(h('div', { cls: 'row' }, h('button', { cls: 'btn' + (A.check ? '' : ' pri'), type: 'button', text: A.check ? 'Rerun self-check' : 'Run self-check', disabled: A.running || !can, on: { click: () => selfCheck() } }),
     A.check && A.check.res ? h('button', { cls: 'btn', type: 'button', text: 'View result', disabled: A.running, on: { click: viewSelfCheck } }) : null,
     h('button', { cls: 'btn', type: 'button', text: 'Load bound ligand (SDF)', disabled: A.running, on: { click: () => inp.click() } }), inp));
   sec.append(h('label', { cls: 'chk' }, h('input', { type: 'checkbox', checked: !!A.o.selfFirst, disabled: A.running, on: { change: e => { A.o.selfFirst = e.target.checked; } } }), h('span', { text: 'Run the self-check before every docking' })));
   const c = A.check; if (!c) return sec;
-  sec.append(h('div', { cls: 'chk-res' }, h('div', { cls: 'row', style: 'gap:8px' }, h('span', { cls: 'chip ' + (c.pass ? 'ok' : 'no'), text: c.pass ? 'PASS' : 'FAIL' }), h('span', { cls: 'aff', text: c.fin.best.toFixed(2), }), h('span', { cls: 'sub', text: 'Å RMSD, closest pose · limit ' + c.limit + ' Å' })),
+  sec.append(h('div', { cls: 'chk-res' }, h('div', { cls: 'row', style: 'gap:8px' }, h('span', { cls: 'chip ' + (c.pass ? 'ok' : 'no'), text: c.pass ? 'PASS' : 'FAIL' }), h('span', { cls: 'aff', text: c.fin.best.toFixed(2), }), h('span', { cls: 'sub', text: 'Å RMSD, ' + (c.meas === 'rsr' ? 'lowest-RSR pose' : 'closest pose') + ' · limit ' + c.limit + ' Å' }), isFinite(c.fin.rsr) ? h('span', { cls: 'aff', text: c.fin.rsr.toFixed(3) }) : null, isFinite(c.fin.rsr) ? h('span', { cls: 'sub', text: 'RSR (crystal ' + c.rsrRef.toFixed(3) + ', limit ' + c.rsrLimit.toFixed(3) + ')' }) : null),
     h('p', { cls: 'sub', style: 'white-space:normal;margin-top:4px', text: c.label + ' redocked. Closest of ' + c.fin.poses + ' poses is pose ' + c.fin.bestRank + ' (' + c.fin.best.toFixed(2) + ' Å); the top-scoring pose is ' + c.fin.top.toFixed(2) + ' Å. ' + c.attempts.length + ' attempt' + (c.attempts.length > 1 ? 's' : '') + ', ' + c.time.toFixed(0) + ' s' + (c.symmetry > 1 ? ', ' + c.symmetry + ' symmetry-equivalent atom mappings checked' : '') + '.' }),
     c.attempts.length > 1 ? h('table', { cls: 'vtab', style: 'margin-top:6px' }, h('thead', {}, h('tr', {}, h('th', { text: 'Attempt' }), h('th', { cls: 'num', text: 'Runs' }), h('th', { cls: 'num', text: 'Top-scoring' }), h('th', { cls: 'num', text: 'Closest' }))),
       h('tbody', {}, ...c.attempts.map(a => h('tr', {}, h('td', { text: String(a.n) }), h('td', { cls: 'num', text: String(a.runs) }), h('td', { cls: 'num', text: a.top.toFixed(2) + ' Å' }), h('td', { cls: 'num', text: a.best.toFixed(2) + ' Å' }))))) : null,
@@ -865,5 +904,5 @@ $('#con-clear').onclick = () => { CON.lines.length = 0; $('#con-log').textConten
 $('#con-copy').onclick = async () => { const s = CON.lines.map(x => x.ts + '  ' + x.msg).join('\n'); try { await navigator.clipboard.writeText(s); toast('Console copied.'); } catch (e) { toast('Could not copy. Select the text instead.'); } };
 clog(cpName('dock') + ' ready. Draw a compound, then paste a PDB structure in the Target step.');
 loadMolvex(); refreshAll();
-window.__bd = { scCandidates, selfCheck, nativeKeys, ligLabel, addNativeFromSDF, A, Chem, Dock, loadExample, addExampleLigand, clog, ligProps, convert3D, minimiseLig, runDocking, addFromDrawing, poll, go };
+window.__bd = { CON, setMap, scCandidates, selfCheck, nativeKeys, ligLabel, addNativeFromSDF, A, Chem, Dock, loadExample, addExampleLigand, clog, ligProps, convert3D, minimiseLig, runDocking, addFromDrawing, poll, go };
 })();

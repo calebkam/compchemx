@@ -25,7 +25,7 @@ function parsePDB(text) {
     let el = l.substr(76, 2).trim();
     if (!el) { const s = name.replace(/[0-9]/g, ''); el = (rec === 'HETATM' && s.length > 1 && TWO.has(s[0] + s[1].toLowerCase())) ? s[0] + s[1].toLowerCase() : s[0]; }
     el = el[0].toUpperCase() + el.slice(1).toLowerCase(); if (el === 'D') el = 'H';
-    atoms.push({ name, res, chain, resi, ic, x, y, z, el, het: rec === 'HETATM', key: chain + resi + ic });
+    atoms.push({ name, res, chain, resi, ic, x, y, z, el, b: parseFloat(l.substr(60, 6)), het: rec === 'HETATM', key: chain + resi + ic });
   }
   return atoms;
 }
