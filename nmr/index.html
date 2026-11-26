@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title data-brand="nmr">CompChemX NMR</title>
+<link rel="icon" href="../shared/favicon.svg?v=0.3.0" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="../shared/theme.js?v=0.3.0"></script>
+<script src="../shared/brand.js?v=0.3.0"></script>
+<script src="../shared/versions.js?v=0.3.0"></script>
+<style>
+:root{
+  --bg:#1A1918; --panel:#232220; --line:#3A3835; --fg:#ECE8E1; --muted:#9A958B;
+  --accent:#D97757; --accent-soft:rgba(217,119,87,.16); --accent-fg:#1F0E07; --paper:#2B2926;
+  --stage:#151413; --trace:#ECE8E1; --warn:#E6A33D; --danger:#F27C71; --good:#6CCB8A; --sel:rgba(217,119,87,.22);
+  --ui:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#F0EEE6; --panel:#FAF9F5; --line:#DDD9CC; --fg:#1F1E1D; --muted:#6B665C;
+  --accent:#C15F3C; --accent-soft:rgba(193,95,60,.12); --accent-fg:#FFFFFF; --paper:#FFFFFF;
+  --stage:#FFFFFF; --trace:#1F1E1D; --warn:#B26A00; --danger:#B83227; --good:#1F7A3D; --sel:rgba(193,95,60,.16);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.45 var(--ui);
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#shell{height:100%;min-height:640px;display:grid;grid-template-rows:auto minmax(0,1fr);gap:10px}
+#top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 10px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px}
+.brand svg{width:22px;height:22px;color:var(--accent)}
+#sub{flex:1;min-width:0;color:var(--muted);font-size:12px}
+.btn{height:30px;padding:0 11px;border:1px solid var(--line);background:var(--paper);border-radius:6px;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.sm{height:26px;padding:0 8px;font-size:12px}
+.btn.on{border-color:var(--accent);background:var(--accent-soft)}
+#main{display:grid;grid-template-columns:minmax(280px,38%) minmax(0,1fr);gap:10px;min-height:0}
+#left{position:relative;min-height:0;min-width:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper)}
+#bl{width:100%;height:100%;border:0;display:block}
+#right{min-height:0;min-width:0;display:grid;grid-template-rows:auto minmax(220px,1fr) minmax(150px,34%);gap:10px}
+#ctl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.grp{display:flex;align-items:center;gap:6px}
+.grp label{color:var(--muted);font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{height:28px;border:0;border-right:1px solid var(--line);background:var(--paper);padding:0 10px}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accent);color:var(--accent-fg);font-weight:500}
+select,input[type=number]{height:28px;border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:0 6px}
+input[type=range]{accent-color:var(--accent);width:110px}
+.chk{display:inline-flex;align-items:center;gap:5px;color:var(--fg)}
+#specbox{position:relative;min-height:0;border:1px solid var(--line);border-radius:10px;background:var(--stage);overflow:hidden}
+#spec{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+#hint{position:absolute;left:10px;bottom:5px;color:var(--muted);font-size:11px;pointer-events:none}
+#tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 7px;font:12px var(--mono);white-space:nowrap}
+#msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:20px}
+#low{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr);gap:10px;min-height:0}
+#strbox,#tabbox{min-height:0;min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:auto}
+#str{width:100%;height:100%;display:block}
+#tabbox{padding:0}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{text-align:left;padding:4px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel);color:var(--fg);font-weight:600}
+td.n,th.n{font-family:var(--mono)}
+tr.row{cursor:pointer}tr.row:hover td{background:var(--accent-soft)}tr.row.sel td{background:var(--sel)}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+#note{padding:6px 9px;color:var(--muted);font-size:11.5px}
+@media (max-width:900px){
+  body{padding-block:8px}
+  #shell{height:auto}
+  #main{grid-template-columns:minmax(0,1fr);grid-template-rows:420px auto}
+  #right{grid-template-rows:auto 340px auto}
+  #low{grid-template-columns:minmax(0,1fr)}
+  #strbox{height:200px}
+  #tabbox{max-height:300px}
+}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:8px 14px;z-index:9}
+</style>
+</head>
+<body>
+<div id="shell">
+  <header id="top">
+    <a class="brand" href="../" title="All tools" style="color:inherit;text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2 18h3l2-1 2 1 2-12 2 14 2-9 1.5 7H22"/></svg><span data-brand="nmr">CompChemX NMR</span></a>
+    <span id="sub">Draw a molecule on the left. The predicted spectrum updates as you draw.</span>
+    <button id="b-theme" class="btn" title="Switch light / dark">Theme</button>
+  </header>
+  <div id="main">
+    <section id="left"><iframe id="bl" title="Structure editor"></iframe></section>
+    <section id="right">
+      <div id="ctl">
+        <div class="grp"><div class="seg" id="nuc"><button data-v="1H" class="on">¹H</button><button data-v="13C">¹³C</button><button data-v="DEPT">DEPT-135</button></div></div>
+        <div class="grp"><label for="mhz">Field</label><select id="mhz"><option value="60">60 MHz</option><option value="90">90 MHz</option><option value="300">300 MHz</option><option value="400" selected>400 MHz</option><option value="500">500 MHz</option><option value="600">600 MHz</option><option value="800">800 MHz</option></select></div>
+        <div class="grp"><label for="lw">Line width</label><input id="lw" type="range" min="0.3" max="6" step="0.1" value="1"><span id="lwv" class="n" style="font-family:var(--mono);min-width:44px">1.0 Hz</span></div>
+        <div class="grp"><label for="solv">Solvent</label><select id="solv"><option>CDCl3</option><option>DMSO-d6</option><option>CD3OD</option><option>D2O</option><option>acetone-d6</option></select></div>
+        <label class="chk" id="exwrap"><input type="checkbox" id="ex" checked> O–H, N–H</label>
+        <label class="chk"><input type="checkbox" id="nums"> Atom numbers</label>
+        <div class="tools"><button class="btn sm" id="b-reset">Reset zoom</button><button class="btn sm" id="b-copy">Copy report</button><button class="btn sm" id="b-csv">CSV</button><button class="btn sm" id="b-png">PNG</button></div>
+      </div>
+      <div id="specbox"><canvas id="spec"></canvas><div id="msg">Draw a structure to begin.</div><div id="tip" hidden></div><div id="hint">Drag to zoom · wheel to zoom · double-click to reset · click a peak to highlight its atoms</div></div>
+      <div id="low">
+        <div id="strbox"><svg id="str" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg></div>
+        <div id="tabbox"><table><thead id="th"></thead><tbody id="tb"></tbody></table><div id="note"></div></div>
+      </div>
+    </section>
+  </div>
+</div>
+<div id="toast" hidden></div>
+<script src="nmr.js?v=0.3.0"></script>
+<script src="app.js?v=0.3.0"></script>
+<script src="../shared/nav.js?v=0.3.0"></script>
+</body>
+</html>

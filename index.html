@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title data-brand="platform">CompChemX</title>
-<link rel="icon" href="shared/favicon.svg?v=0.2.1" type="image/svg+xml">
+<link rel="icon" href="shared/favicon.svg?v=0.3.0" type="image/svg+xml">
 <meta name="description" content="CompChemX: browser-based tools for drawing molecules and docking them to proteins. Everything runs locally in your browser.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="shared/theme.js?v=0.2.1"></script>
-<script src="shared/brand.js?v=0.2.1"></script>
-<script src="shared/versions.js?v=0.2.1"></script>
+<script src="shared/theme.js?v=0.3.0"></script>
+<script src="shared/brand.js?v=0.3.0"></script>
+<script src="shared/versions.js?v=0.3.0"></script>
 <meta name="color-scheme" content="dark light">
 <style>
 :root{
@@ -83,10 +83,13 @@ const TOOLS = [
   { group: 'mol', name: cpName('draw'), href: 'draw/', icon: 'pen', tag: 'Draw',
     text: 'A 2D chemical structure editor. Draw rings, chains, charges and stereochemistry, get IUPAC names offline, copy or paste SMILES and see the structure in 3D.' },
   { group: 'mol', name: cpName('dock'), href: 'dock/', icon: 'dock', tag: 'Build and dock',
-    text: 'Convert a drawing to 3D, minimise its energy, define a binding pocket on a PDB structure and dock it. Poses, images, drug-likeness and kcal/mol or kJ/mol.' }
+    text: 'Convert a drawing to 3D, minimise its energy, define a binding pocket on a PDB structure and dock it. Poses, images, drug-likeness and kcal/mol or kJ/mol.' },
+  { group: 'mol', name: cpName('nmr'), href: 'nmr/', icon: 'nmr', tag: 'Predict spectra',
+    text: 'Draw a molecule and see its predicted 1H and 13C NMR spectrum: shifts, multiplets, integrals and DEPT-135, at the field strength you choose.' }
 ];
 const ICONS = {
   pen: '<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 7l3 3"/>',
+  nmr: '<path d="M2 18h3l2-1 2 1 2-12 2 14 2-9 1.5 7H22"/>',
   dock: '<path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><circle cx="12" cy="12" r="2.6"/>'
 };
 const groups = document.getElementById('groups');

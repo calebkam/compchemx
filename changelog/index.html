@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title data-brand="platform" data-brand-suffix=" Changelog and References">CompChemX Changelog and References</title>
-<link rel="icon" href="../shared/favicon.svg?v=0.2.1" type="image/svg+xml">
+<link rel="icon" href="../shared/favicon.svg?v=0.3.0" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="../shared/theme.js?v=0.2.1"></script>
-<script src="../shared/brand.js?v=0.2.1"></script>
-<script src="../shared/versions.js?v=0.2.1"></script>
+<script src="../shared/theme.js?v=0.3.0"></script>
+<script src="../shared/brand.js?v=0.3.0"></script>
+<script src="../shared/versions.js?v=0.3.0"></script>
 <meta name="color-scheme" content="dark light">
 <style>
 :root{
@@ -88,7 +88,8 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:v
 <script>
 /* Newest release first inside each tool. rel = [heading, date, [items]] */
 const LOG = [
-  { id: "site", name: cpName("site"), about: "Browser-based computational chemistry: draw molecules and dock them into proteins. Everything runs in your browser.", rel: [
+  { id: "site", name: cpName("site"), about: "Browser-based computational chemistry: draw molecules, dock them into proteins and predict their NMR spectra. Everything runs in your browser.", rel: [
+    ["0.3.0", "2026-11-26", ["New tool, CompChemX NMR: draw a molecule in the embedded Draw editor and get a simulated 1H, 13C or DEPT-135 spectrum that updates as you draw.","NMR: empirical additive-increment predictor (alkyl, alkene and aromatic 1H increments, heteroaromatic ring base values, Grant-Paul 13C with substituent increments, carbonyl, nitrile and alkyne classes). Chemically equivalent atoms share one signal.","NMR: first-order multiplets (s, d, t, q, dd, td ...) with typical J values, Lorentzian line shapes, field strength 60 to 800 MHz, adjustable line width, solvent choice, optional O-H / N-H signals, integrals.","NMR: click a peak, table row or atom to highlight its partner; zoom by dragging or wheel; copy a journal-style peak report; export CSV and PNG."]],
     ["0.2.1", "2026-11-26", ["Self-check Measure menu: the RSR options can now be selected before a map is loaded (they were greyed out). Until a map is loaded the check uses RMSD only and says so."]],
     ["0.2.0", "2026-11-26", ["Docking self-check can now also measure the real-space R value (RSR): how well the redocked pose explains the experimental electron density, next to the existing RMSD. Choose RMSD (default), RSR or both. Load a 2Fo-Fc map (CCP4 or MRC, stays on your computer) or fetch it from PDBe by PDB ID (only the ID is sent).","RSR is computed over the grid points around the crystal ligand and the pose, with the model density scaled to the map; the crystal ligand is the reference, and a pose passes at or below the larger of 0.40 and the crystal RSR + 0.10. The result banner, pose card and console show RSR and RMSD together. Heuristic cut-offs; resolution and B-factor are read from the PDB file."]],
     ["0.1.1", "2026-11-26", ["Docking self-check now recognises ligands that are covalently bonded to the protein (for example avibactam bound to Ser90 in 4OOY). A covalent pose cannot be reproduced by non-covalent redocking, so the check is reported as not applicable for that ligand, with the bonded residue and distance, instead of failing ten times. Covalent ligands are listed last when choosing which ligand to check."]],

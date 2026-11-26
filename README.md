@@ -1,6 +1,6 @@
 # CompChemX
 
-CompChemX is the platform. CompChemX Draw is the 2D drawing tool and CompChemX Dock is the docking tool.
+CompChemX is the platform. CompChemX Draw is the 2D drawing tool, CompChemX Dock is the docking tool and CompChemX NMR predicts NMR spectra.
 
 Browser-based chemistry tools. Static files only: no build step, no server code, nothing leaves the browser. Dark by default with an orange accent; every page has a light/dark switch that is remembered (`localStorage`, key `cp-theme`).
 
@@ -9,6 +9,7 @@ Browser-based chemistry tools. Static files only: no build step, no server code,
 | Home | `index.html` | Landing page with a card for each tool |
 | CompChemX Draw | `draw/` | 2D chemical structure editor: offline IUPAC names, SMILES in and out, 3D view |
 | CompChemX Dock | `dock/` | Draw → 3D → minimise → define pocket → dock; kcal/mol or kJ/mol, pose images, drug-likeness |
+| CompChemX NMR | `nmr/` | Draw → predicted 1H, 13C and DEPT-135 spectra: shifts, multiplets, integrals, peak report, CSV and PNG export |
 | Changelog, Reference and Citation | `changelog/` | What changed (add an entry with every release), the references, and how to cite our work |
 | Shared | `shared/` | `theme.js`, `nav.js`, `versions.js` and one copy of three.js r128 |
 
@@ -26,7 +27,7 @@ See `PUBLISHING.md`. In short: upload the files through the GitHub website, then
 
 ## Version numbers
 
-All version numbers live in `shared/versions.js` (all 0.2.1 for now): one per tool plus `site` for the home page. Add a matching entry to `changelog/index.html` with every release. Bump the number when you change that tool. Each tool page shows its number beside the theme button, and the home page shows its own number next to the title and each tool's number on its card.
+All version numbers live in `shared/versions.js` (all 0.3.0 for now): one per tool plus `site` for the home page. Add a matching entry to `changelog/index.html` with every release. Bump the number when you change that tool. Each tool page shows its number beside the theme button, and the home page shows its own number next to the title and each tool's number on its card.
 
 ## Adding a tool
 
@@ -40,6 +41,8 @@ All version numbers live in `shared/versions.js` (all 0.2.1 for now): one per to
 **CompChemX Draw** has offline IUPAC naming (`draw/iupac.js` is the source, inlined into `index.html`; rebuild the inlined copy if you edit it; tests in `draw/test/`), SMILES in and out (`draw/smilesin.js`, also inlined) and a 3D view (`draw/mol3d.js`, inlined, using three.js and `dock/chem.js` for the 3D model). It is your single-file editor, with three small edits: the theme is dark by default and shared (`cp-theme` instead of its own key), it repaints when another page changes the theme, and the palette is the shared one. If you replace `draw/index.html` with a newer version, re-apply those edits. Dock only needs the editor to keep exposing `molfile()`.
 
 **CompChemX Dock** loads `../draw/index.html` into an iframe and reads the drawing through `molfile()`. Files: `chem.js` (molfile parsing, 3D build, UFF-style minimisation, conformer search), `dock.js` (Vina-style scoring, grid maps, Monte Carlo + BFGS, pocket detection), `viewer.js` (three.js viewer), `props.js` (drug-likeness: Lipinski, Veber, Egan, TPSA, MLOGP, ESOL, SwissADME-style radar; estimates only), `app.js` (interface, console, AutoDock-GPU job sheet), `data/` (1IEP example). Units are Å and kcal/mol (kJ/mol on request). The scoring terms and weights are AutoDock Vina's (unchanged since 1.0; 1.2.7 is the current release). Grid maps are used for the search, then every kept pose is re-optimised and scored with exact pair sums, because trilinear maps under-resolve the sharp gauss1 term and read about 7 % too weak. Checked against Vina 1.2.7 on 1IEP/imatinib: crystal pose -12.53 vs -12.51 kcal/mol, redock top -13.3 vs -13.26 kcal/mol (`dock/test/vina.test.js`). Scores are still estimates: receptor/ligand preparation and search differ from Vina's. Use it for exploration and ranking. Run `npm test` for the chemistry and docking tests.
+
+**CompChemX NMR** loads `../draw/index.html` the same way as Dock and reads `molfile()`. `nmr.js` is a plain, node-testable module (`node nmr/test/nmr.test.js`): molfile → graph, ring and aromaticity perception, symmetry classes, 1H/13C increment tables, first-order multiplets and the Lorentzian synthesis. `app.js` is the page. It is an empirical predictor (about ±0.3 ppm for 1H, ±5 ppm for 13C on ordinary organics); it does not do second-order effects, diastereotopic splitting or conformers.
 
 ## Third-party code
 
