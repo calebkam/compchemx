@@ -260,7 +260,7 @@ function ligForDock(l) { if (!l.mol) convert3D(l); return Dock.prepareLigand(l.m
 async function runDocking() {
   const todo = A.ligs.filter(l => l.dockOn !== false); if (!todo.length) return toast('Add and tick at least one compound.');
   if (!A.rec) return toast('Load a target first.'); if (!A.box) return toast('Define the search box first.');
-  if (A.o.selfFirst && scCandidates().length) { const sc = await selfCheck(); if (sc === 'cancelled' || sc === 'busy') return; if (sc === 'fail') clog('Self-check did not reach ' + RMSD_LIMIT + ' Å. Docking continues, but read the scores with care.', 'err'); }
+  if (A.o.selfFirst && scCandidates().length) { const sc = await selfCheck(); if (sc === 'cancelled' || sc === 'busy') return; if (sc === 'covalent') clog('Docking continues without a self-check.'); if (sc === 'fail') clog('Self-check did not reach ' + RMSD_LIMIT + ' Å. Docking continues, but read the scores with care.', 'err'); }
   A.running = true; A.cancel = false; A.log = []; A.progress = { grid: 0, lig: 0, name: '', i: 0, n: todo.length }; renderPanel(); refreshView();
   const log = m => clog(m); conOpen(true); clog('--- Docking run started: ' + todo.length + ' compound' + (todo.length > 1 ? 's' : '') + ', exhaustiveness ' + A.o.runs + ', effort ' + A.o.effort + ' ---');
   const prog = () => { const p = A.progress; const g = $('#pg-grid'), r = $('#pg-lig'), t = $('#pg-txt'); if (g) g.style.width = (p.grid * 100) + '%'; if (r) r.style.width = (p.lig * 100) + '%'; if (t) t.textContent = p.name ? p.name + ' (' + (p.i + 1) + ' of ' + p.n + ')' : ''; };
@@ -693,10 +693,17 @@ const HILITE = 0x00ff40; /* bright lime green for the highlighted residue and it
 const RMSD_LIMIT = 2.2, SC_MAX = 10;
 const nativeLig = () => A.ligs.find(l => l.crystal && l.ref) || null;
 /* Candidates: ligands (HETATM groups) found in the structure, largest first, then any bound ligand loaded as SDF. */
+/* A ligand bonded to the protein (covalent inhibitor, modified residue) cannot be redocked as a free molecule. Detect it from distances: any ligand heavy atom within 1.95 Å of a protein heavy atom. */
+function covalentOf(g) {
+  let best = null; const P = (A.recAtoms || []).filter(a => !a.het && a.el !== 'H');
+  for (const a of g.atoms) { if (a.el === 'H') continue; for (const b of P) { const dx = a.x - b.x; if (dx > 1.95 || dx < -1.95) continue; const d = Math.hypot(dx, a.y - b.y, a.z - b.z); if (d < 1.95 && (!best || d < best.d)) best = { d, atom: a.name, res: b.res, resi: b.resi, chain: b.chain, patom: b.name }; } }
+  return best;
+}
 function scCandidates() {
   const out = [];
-  for (const g of [...(A.hets || [])].filter(g => g.nHeavy >= 5 && g.nHeavy <= 150).sort((p, q) => q.nHeavy - p.nHeavy)) out.push({ id: 'het:' + g.id, kind: 'het', g, label: hetLabel(g), sub: hetSub(g) });
+  for (const g of [...(A.hets || [])].filter(g => g.nHeavy >= 5 && g.nHeavy <= 150).sort((p, q) => q.nHeavy - p.nHeavy)) out.push({ id: 'het:' + g.id, kind: 'het', g, label: hetLabel(g), sub: hetSub(g), cov: covalentOf(g) });
   for (const l of A.ligs) if (l.crystal && l.ref) out.push({ id: 'lig:' + l.id, kind: 'lig', l, label: ligLabel(l), sub: 'loaded as SDF' });
+  out.sort((p, q) => (p.cov ? 1 : 0) - (q.cov ? 1 : 0));
   if (!out.length && A.example) out.push({ id: 'ex', kind: 'ex', label: 'Imatinib (example crystal pose)', sub: 'example' });
   return out;
 }
@@ -720,6 +727,10 @@ async function selfCheck(opt = {}) {
   const cands = scCandidates();
   if (!cands.length) { toast('No ligand was found in this structure. Paste a PDB file that contains the bound ligand (HETATM lines).', 6000); return 'no'; }
   const c = cands.find(x => x.id === (opt.id || A.scSel)) || cands[0]; A.scSel = c.id;
+  if (c.cov && !opt.force) {
+    const w = c.label + ' is covalently bonded to ' + c.cov.res + ' ' + c.cov.resi + ' (' + c.cov.patom + '\u2013' + c.cov.atom + ', ' + c.cov.d.toFixed(2) + ' Å), so it cannot be redocked as a free molecule.';
+    conOpen(true); clog('--- Self-check not applicable: ' + w + ' ---', 'err'); toast('Self-check not applicable: ' + w, 8000); return 'covalent';
+  }
   let l; try { l = buildCheckLig(c); } catch (e) { toast('Self-check: ' + e.message, 7000); return 'no'; }
   const hv = l.mol.atoms.filter(a => a.el !== 'H').map(a => [a.x, a.y, a.z]), cen = [0, 1, 2].map(q => hv.reduce((s, p) => s + p[q], 0) / hv.length);
   const inside = A.box && cen.every((v, q) => Math.abs(v - A.box.c[q]) <= A.box.s[q] / 2 - 1);
@@ -759,6 +770,8 @@ function viewSelfCheck() { A.pose = { id: 'selfcheck', mode: 0 }; go('res'); }
 /* One line at the top of the results: DOCKING SELF CHECK: RMSD = XX Angstroms */
 function selfCheckBanner() {
   const c = A.check;
+  const cl = scCandidates(), cu = cl.find(x => x.id === A.scSel) || cl[0];
+  if (!c && cu && cu.cov) return h('div', { cls: 'scb none' }, h('span', { cls: 'scb-t', text: 'DOCKING SELF CHECK: not applicable' }), h('span', { cls: 'sub', style: 'white-space:normal', text: cu.label + ' is covalently bonded to ' + cu.cov.res + ' ' + cu.cov.resi + '; pick another ligand or load a free one as SDF' }));
   if (!c) return h('div', { cls: 'scb none' }, h('span', { cls: 'scb-t', text: 'DOCKING SELF CHECK: not run' }), h('button', { cls: 'btn sm', type: 'button', text: 'Run it', disabled: A.running || !scCandidates().length, on: { click: async () => { await selfCheck(); renderPanel(); } } }));
   return h('div', { cls: 'scb ' + (c.pass ? 'pass' : 'fail') }, h('div', { cls: 'scb-t', text: 'DOCKING SELF CHECK: RMSD = ' + c.fin.best.toFixed(2) + ' Angstroms' }),
     h('div', { cls: 'sub', style: 'white-space:normal', text: (c.pass ? 'PASS' : 'FAIL') + ' (limit ' + c.limit + ' Å) · ' + c.label + ' taken from the structure and redocked · ' + c.attempts.length + ' attempt' + (c.attempts.length > 1 ? 's' : '') }));
@@ -780,6 +793,7 @@ function selfCheckCard() {
   if (!can) sec.append(h('p', { cls: 'note', text: 'No ligand was found in the pasted structure. Paste a PDB file that includes the bound ligand (HETATM lines), or load it as an SDF below.' }));
   else if (cands.length > 1) sec.append(h('div', { cls: 'row' }, h('label', { text: 'Ligand' }), h('select', { disabled: A.running, 'aria-label': 'Ligand for the self-check', on: { change: e => { A.scSel = e.target.value; } } }, ...cands.map(x => h('option', { value: x.id, selected: cur && x.id === cur.id, text: x.label })))));
   else sec.append(h('p', { cls: 'sub', style: 'white-space:normal', text: 'Ligand: ' + cur.label + (cur.sub ? ' · ' + cur.sub : '') }));
+  if (can && cur.cov) sec.append(h('p', { cls: 'note', text: cur.label + ' is covalently bonded to ' + cur.cov.res + ' ' + cur.cov.resi + ' (' + cur.cov.d.toFixed(2) + ' Å). A covalent ligand cannot be reproduced by non-covalent docking, so the self-check is skipped for it. Choose another ligand, or load a free one as SDF.' }));
   const inp = h('input', { type: 'file', accept: '.sdf,.mol', hidden: true, 'aria-label': 'Choose the bound ligand as SDF', on: { change: async e => { const f = e.target.files[0]; if (!f) return; const l = addNativeFromSDF(await f.text(), f.name); e.target.value = ''; if (l) { A.scSel = 'lig:' + l.id; clog('Loaded the bound ligand ' + ligLabel(l) + '.'); refreshAll(); } } } });
   sec.append(h('div', { cls: 'row' }, h('button', { cls: 'btn' + (A.check ? '' : ' pri'), type: 'button', text: A.check ? 'Rerun self-check' : 'Run self-check', disabled: A.running || !can, on: { click: () => selfCheck() } }),
     A.check && A.check.res ? h('button', { cls: 'btn', type: 'button', text: 'View result', disabled: A.running, on: { click: viewSelfCheck } }) : null,
