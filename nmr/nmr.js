@@ -57,21 +57,28 @@ function allowedValences(el, chg) {
 
 /* Build the heavy-atom graph: explicit hydrogens are folded into counts, hydrogen counts come from valence. */
 function build(mol) {
-  const idx = new Array(mol.atoms.length).fill(-1), atoms = [];
-  mol.atoms.forEach((a, i) => { if (!/^[HDT]$/.test(a.el)) { idx[i] = atoms.length; atoms.push({ el: a.el, chg: a.chg || 0, x: a.x, y: a.y, nb: [], src: i, nH: 0, arom: false, rings: [] }); } });
+  const idx = new Array(mol.atoms.length).fill(-1), atoms = [], ionic = new Set(), notes = [];
+  const METAL = /^(Li|Na|K|Rb|Cs|Mg|Ca|Zn|Al|Ag|Cu|Fe)$/;
+  mol.atoms.forEach((a, i) => { if (METAL.test(a.el)) { mol.bonds.forEach(b => { if (b.a === i) ionic.add(b.b); if (b.b === i) ionic.add(b.a); }); notes.push('Metal counter-ion ' + a.el + ' ignored.'); } });
+  const lone = i => !mol.bonds.some(b => b.a === i || b.b === i);
+  mol.atoms.forEach((a, i) => { if (!/^[HDT]$/.test(a.el) && !METAL.test(a.el) && !(/^(F|Cl|Br|I)$/.test(a.el) && a.chg < 0 && lone(i))) { idx[i] = atoms.length; atoms.push({ el: a.el, chg: a.chg || 0, x: a.x, y: a.y, nb: [], src: i, nH: 0, arom: false, rings: [] }); } });
   const bonds = [];
   for (const b of mol.bonds) {
     const i = idx[b.a], j = idx[b.b]; if (i < 0 || j < 0 || i === j) continue;
     const bd = { a: i, b: j, o: Math.min(3, Math.max(1, b.o)), ar: false, i: bonds.length };
     bonds.push(bd); atoms[i].nb.push({ j, bd }); atoms[j].nb.push({ j: i, bd });
   }
-  const G = { atoms, bonds, n: atoms.length, unknown: [] };
+  const G = { atoms, bonds, n: atoms.length, unknown: [], notes };
   for (const a of atoms) {
     if (!ALLOWED[a.el]) G.unknown.push(a.el);
     let bo = 0; for (const { bd } of a.nb) bo += bd.o;
     const v = allowedValences(a.el, a.chg).find(x => x >= bo);
     a.nH = v === undefined ? 0 : v - bo;
+    if (ionic.has(a.src) && a.chg === 0 && /^[ONS]$/.test(a.el)) a.nH = 0;      /* drawn as O-Na: the O carries the charge */
   }
+  const els = new Set(atoms.map(a => a.el));
+  if (els.has('F')) notes.push('Couplings to 19F are not modelled.');
+  if (els.has('P')) notes.push('Couplings to 31P are not modelled.');
   findRings(G); perceiveAromatic(G); symmetry(G);
   return G;
 }
@@ -163,6 +170,7 @@ function subKey(G, c, s) {
   if (el === 'F' || el === 'Cl' || el === 'Br' || el === 'I') return el;
   if (el === 'C') {
     if (a.arom) return 'Ph';
+    if (a.nb.some(x => x.bd.o === 2 && G.atoms[x.j].el === 'S') && !a.nb.some(x => x.bd.o === 2 && G.atoms[x.j].el !== 'S')) return 'CS';
     const t = tripleNbr(G, s);
     if (t >= 0) return G.atoms[t].el === 'N' ? 'CN' : 'alkynyl';
     const o = dblO(G, s);
@@ -185,19 +193,39 @@ function subKey(G, c, s) {
   }
   if (el === 'N') {
     if (a.arom) return 'NArom';
-    if (others.filter(x => G.atoms[x.j].el === 'O').length >= 2 || (a.chg > 0 && others.some(x => G.atoms[x.j].el === 'O'))) return 'NO2';
-    if (a.chg > 0 || a.nb.length + a.nH >= 4) return 'NR3';
+    if (others.filter(x => G.atoms[x.j].el === 'O').length >= 2) return 'NO2';
+    if (a.chg > 0 || a.nb.length + a.nH >= 4) {
+      if (a.nb.some(x => x.bd.o === 2 && x.j !== c && G.atoms[x.j].el === 'N')) return 'N3';
+      return 'NR3';
+    }
+    if (others.some(x => G.atoms[x.j].el === 'N' && G.atoms[x.j].chg > 0 && G.atoms[x.j].nb.filter(y => y.bd.o === 2).length >= 2)) return 'N3';
+    if (others.some(x => x.bd.o === 2 && G.atoms[x.j].el === 'O') || others.some(x => G.atoms[x.j].el === 'N' && G.atoms[x.j].nb.some(y => y.bd.o === 2 && G.atoms[y.j].el === 'O'))) return 'NNO';
+    if (others.some(x => x.bd.o === 2 && G.atoms[x.j].el === 'N')) return 'NAzo';
+    if (others.some(x => x.bd.o === 2 && G.atoms[x.j].el === 'C')) {
+      const k = others.find(x => x.bd.o === 2 && G.atoms[x.j].el === 'C').j;
+      if (G.atoms[k].nb.some(y => y.bd.o === 2 && y.j !== s && G.atoms[y.j].el === 'O')) return 'NCO';
+      if (G.atoms[k].nb.some(y => y.bd.o === 2 && y.j !== s && G.atoms[y.j].el === 'S')) return 'NCS';
+      return 'NIm';
+    }
     if (isAcylN(G, s, c)) return 'NHAc';
     return a.nH === 2 ? 'NH2' : a.nH === 1 ? 'NHR' : 'NR2';
   }
   if (el === 'O') {
+    if (others.some(x => G.atoms[x.j].el === 'N' && G.atoms[x.j].nb.filter(y => G.atoms[y.j].el === 'O').length >= 2)) return 'ONO2';
+    if (others.some(x => G.atoms[x.j].el === 'P')) return 'OP';
+    if (others.some(x => G.atoms[x.j].el === 'C' && G.atoms[x.j].nb.filter(y => G.atoms[y.j].el === 'F').length >= 3)) return 'OCF3';
     if (others.some(x => isCarbonyl(G, x.j) || (G.atoms[x.j].el === 'S' && G.atoms[x.j].nb.some(y => y.bd.o === 2)) || G.atoms[x.j].el === 'P')) return 'OAc';
     if (others.some(x => G.atoms[x.j].arom)) return 'OPh';
     return a.nH > 0 ? 'OH' : 'OR';
   }
   if (el === 'S') {
-    const no = a.nb.filter(x => x.bd.o === 2 && G.atoms[x.j].el === 'O').length;
-    return no >= 2 ? 'SO2' : no === 1 ? 'SO' : a.nH > 0 ? 'SH' : 'SR';
+    const no = a.nb.filter(x => x.bd.o === 2 && G.atoms[x.j].el === 'O').length, nf = a.nb.filter(x => G.atoms[x.j].el === 'F').length;
+    if (nf >= 5) return 'SF5';
+    if (no >= 2) { if (others.some(x => G.atoms[x.j].el === 'N')) return 'SO2N'; if (others.some(x => G.atoms[x.j].el === 'Cl')) return 'SO2Cl'; if (others.some(x => x.bd.o === 1 && G.atoms[x.j].el === 'O')) return 'SO2O'; return 'SO2'; }
+    if (no === 1) return 'SO';
+    if (others.some(x => G.atoms[x.j].el === 'C' && G.atoms[x.j].nb.filter(y => G.atoms[y.j].el === 'F').length >= 3)) return 'SCF3';
+    if (others.some(x => x.bd.o === 3 || (G.atoms[x.j].el === 'C' && tripleNbr(G, x.j) >= 0 && G.atoms[tripleNbr(G, x.j)].el === 'N'))) return 'SCN';
+    return a.nH > 0 ? 'SH' : 'SR';
   }
   if (el === 'P') return 'P'; if (el === 'Si') return 'Si'; if (el === 'B') return 'B';
   return 'X';
@@ -208,36 +236,44 @@ function smallestRing(G, i) { let s = 99; G.rings.forEach(r => { if (!r.arom && 
 
 /* ------------------------------------------------------------------ 1H increment tables */
 const H_ALPHA = { F: 3.2, Cl: 2.3, Br: 2.1, I: 1.7, OH: 2.35, OR: 2.35, OPh: 2.9, OAc: 2.95, NH2: 1.45, NHR: 1.45, NR2: 1.45, NHAc: 2.0, NR3: 2.3, NO2: 3.45, NArom: 2.7, SH: 1.25, SR: 1.25, SO: 1.7, SO2: 2.0,
-  Ph: 1.45, vinyl: 0.8, alkynyl: 0.9, CN: 1.15, CHO: 1.35, COR: 1.3, COOH: 1.15, COOR: 1.15, CON: 1.1, COCl: 1.5, P: 0.9, Si: -0.7, B: 0, X: 0 };
+  Ph: 1.45, vinyl: 0.8, alkynyl: 0.9, CN: 1.15, CHO: 1.35, COR: 1.3, COOH: 1.15, COOR: 1.15, CON: 1.1, COCl: 1.5, P: 0.9, Si: -0.85, B: -0.1, X: 0,
+  N3: 2.05, NNO: 2.5, NAzo: 2.4, NIm: 2.4, NCO: 2.05, NCS: 2.2, ONO2: 3.2, OP: 2.9, OCF3: 3.0, SO2N: 2.0, SO2Cl: 2.75, SO2O: 2.1, SCN: 1.7, SCF3: 1.5, SF5: 2.0, CS: 1.7 };
 const H_BETA = { F: 0.3, Cl: 0.6, Br: 0.8, I: 0.95, OH: 0.35, OR: 0.35, OPh: 0.4, OAc: 0.45, NH2: 0.25, NHR: 0.25, NR2: 0.25, NHAc: 0.3, NR3: 0.4, NO2: 0.65, NArom: 0.4, SH: 0.3, SR: 0.3, SO: 0.4, SO2: 0.4,
-  Ph: 0.35, vinyl: 0.2, alkynyl: 0.2, CN: 0.25, CHO: 0.2, COR: 0.2, COOH: 0.2, COOR: 0.2, CON: 0.2, COCl: 0.25, CF3: 0.7, P: 0.2 };
+  Ph: 0.35, vinyl: 0.2, alkynyl: 0.2, CN: 0.25, CHO: 0.2, COR: 0.2, COOH: 0.2, COOR: 0.2, CON: 0.2, COCl: 0.25, CF3: 0.7, P: 0.2, N3: 0.3, NNO: 0.35, NAzo: 0.3, NIm: 0.3, NCO: 0.3, NCS: 0.3, ONO2: 0.5, OP: 0.45, OCF3: 0.4, SO2N: 0.4, SO2Cl: 0.5, SO2O: 0.4, SCN: 0.3, SCF3: 0.3, SF5: 0.4, CS: 0.2 };
 /* alkene: [gem, cis, trans] */
 const ALK_ALKYL = [0.45, -0.22, -0.28];
 const H_VINYL = { CH3: ALK_ALKYL, Et: ALK_ALKYL, iPr: ALK_ALKYL, tBu: [0.55, -0.21, -0.28], CH2O: [0.64, -0.01, -0.02], CH2X: [0.70, 0.11, -0.04], CH2N: [0.58, -0.10, -0.08], CF3: [0.66, 0.61, 0.32],
   vinyl: [1.00, -0.09, -0.23], alkynyl: [0.47, 0.38, 0.12], Ph: [1.38, 0.36, -0.07], CHO: [1.03, 0.97, 1.21], COR: [1.10, 1.12, 0.87], COOH: [1.00, 1.35, 0.74], COOR: [0.84, 1.15, 0.56], CON: [1.37, 0.98, 0.46],
   COCl: [1.10, 1.46, 1.01], CN: [0.27, 0.75, 0.55], OH: [1.22, -1.07, -1.21], OR: [1.22, -1.07, -1.21], OPh: [1.21, -0.60, -1.00], OAc: [2.11, -0.35, -0.64], NH2: [0.80, -1.26, -1.21], NHR: [0.80, -1.26, -1.21],
   NR2: [0.80, -1.26, -1.21], NHAc: [2.08, -0.57, -0.72], NArom: [2.08, -0.57, -0.72], NO2: [1.87, 1.30, 0.62], F: [1.54, -0.40, -1.02], Cl: [1.08, 0.18, 0.13], Br: [1.07, 0.45, 0.55], I: [1.14, 0.81, 0.88],
-  SH: [1.11, -0.29, -0.13], SR: [1.11, -0.29, -0.13], SO2: [1.55, 1.16, 0.93], SO: [1.55, 1.16, 0.93], Si: [0.0, 0.0, 0.0] };
+  SH: [1.11, -0.29, -0.13], SR: [1.11, -0.29, -0.13], SO2: [1.55, 1.16, 0.93], SO: [1.55, 1.16, 0.93], Si: [0.0, 0.0, 0.0],
+  N3: [0.4, -0.4, -0.4], NNO: [1.0, 0.1, 0.1], NAzo: [0.8, 0.0, 0.0], NIm: [0.8, 0.0, 0.0], NCS: [0.4, 0.3, 0.3], NCO: [0.4, -0.2, -0.2], ONO2: [2.0, -0.1, -0.4], OP: [1.5, -0.3, -0.5], OCF3: [1.3, -0.5, -0.8], SO2N: [1.55, 1.16, 0.93], SO2Cl: [1.6, 1.3, 1.1], SO2O: [1.55, 1.16, 0.93], SCN: [1.1, 0.4, 0.3], SCF3: [1.2, 0.4, 0.3], SF5: [1.5, 1.0, 0.9] };
 /* aromatic: [ortho, meta, para] for 1H and [ipso, ortho, meta, para] for 13C */
 const AR_H = { CH3: [-0.20, -0.12, -0.22], Et: [-0.14, -0.06, -0.17], iPr: [-0.13, -0.08, -0.18], tBu: [0.02, -0.08, -0.21], CH2O: [-0.07, -0.07, -0.07], CH2X: [0.0, 0.0, 0.0], CH2N: [-0.05, -0.05, -0.08],
   CF3: [0.32, 0.14, 0.20], vinyl: [0.04, -0.04, -0.12], alkynyl: [0.15, -0.02, -0.01], Ph: [0.37, 0.20, 0.10], CHO: [0.56, 0.22, 0.29], COR: [0.62, 0.14, 0.21], COOH: [0.85, 0.18, 0.27], COOR: [0.71, 0.11, 0.21],
   CON: [0.61, 0.10, 0.17], COCl: [0.84, 0.22, 0.36], CN: [0.36, 0.18, 0.28], NO2: [0.95, 0.26, 0.38], OH: [-0.56, -0.12, -0.45], OR: [-0.48, -0.09, -0.44], OPh: [-0.29, -0.05, -0.23], OAc: [-0.25, 0.03, -0.13],
   NH2: [-0.75, -0.25, -0.65], NHR: [-0.80, -0.22, -0.68], NR2: [-0.66, -0.18, -0.67], NHAc: [0.12, -0.07, -0.28], NArom: [0.12, -0.07, -0.28], NR3: [0.69, 0.36, 0.31], F: [-0.26, 0.00, -0.20], Cl: [0.03, -0.02, -0.09],
-  Br: [0.18, -0.08, -0.04], I: [0.39, -0.21, 0.00], SH: [-0.08, -0.16, -0.22], SR: [-0.08, -0.10, -0.24], SO: [0.45, 0.2, 0.2], SO2: [0.60, 0.26, 0.33], Si: [0.22, -0.02, -0.02], P: [0.1, 0.0, 0.0] };
+  Br: [0.18, -0.08, -0.04], I: [0.39, -0.21, 0.00], SH: [-0.08, -0.16, -0.22], SR: [-0.08, -0.10, -0.24], SO: [0.45, 0.2, 0.2], SO2: [0.60, 0.26, 0.33], Si: [0.22, -0.02, -0.02], P: [0.1, 0.0, 0.0],
+  N3: [-0.28, 0.06, -0.16], NNO: [0.6, 0.2, 0.2], NAzo: [0.62, 0.2, 0.25], NIm: [-0.07, 0.0, -0.1], NCO: [-0.1, -0.05, -0.15], NCS: [-0.1, 0.0, -0.1], ONO2: [0.1, 0.1, 0.1], OP: [-0.1, 0.0, -0.1],
+  OCF3: [-0.1, 0.1, 0.0], SO2N: [0.66, 0.26, 0.33], SO2Cl: [0.76, 0.35, 0.45], SO2O: [0.64, 0.26, 0.36], SCN: [0.2, 0.1, 0.1], SCF3: [0.3, 0.1, 0.15], SF5: [0.6, 0.3, 0.35], B: [0.85, 0.2, 0.25], CS: [0.6, 0.1, 0.2] };
 const AR_C = { CH3: [9.3, 0.7, -0.1, -3.0], Et: [15.6, -0.5, 0.0, -2.6], iPr: [20.1, -2.0, 0.0, -2.5], tBu: [22.2, -3.4, -0.4, -3.1], CH2O: [12.4, -1.2, 0.2, -1.1], CH2X: [9.3, 0.2, 0.2, -0.2], CH2N: [14.0, -1.5, 0.0, -1.5],
   CF3: [2.6, -3.1, 0.4, 3.4], vinyl: [8.9, -2.3, -0.1, -0.8], alkynyl: [-6.2, 3.6, -0.4, -0.3], Ph: [13.0, -1.1, 0.5, -1.0], CHO: [8.2, 1.2, 0.5, 5.8], COR: [9.1, 0.1, 0.0, 4.2], COOH: [2.1, 1.6, -0.1, 5.2],
   COOR: [2.0, 1.2, -0.1, 4.3], CON: [5.0, -1.2, 0.0, 3.4], COCl: [4.6, 2.4, 0.3, 6.2], CN: [-15.7, 3.6, 0.7, 4.3], NO2: [19.9, -4.9, 0.9, 6.1], OH: [26.9, -12.7, 1.4, -7.3], OR: [31.4, -14.4, 1.0, -7.7],
   OPh: [27.6, -11.2, -0.3, -6.9], OAc: [22.4, -7.1, -0.4, -3.2], NH2: [18.2, -13.4, 0.8, -10.0], NHR: [21.7, -16.2, 0.7, -11.8], NR2: [22.4, -15.7, 0.8, -11.8], NHAc: [11.1, -9.9, 0.2, -5.6], NArom: [11.1, -9.9, 0.2, -5.6],
   NR3: [19.8, -5.3, 1.7, 2.4], F: [35.1, -14.3, 0.9, -4.4], Cl: [6.4, 0.2, 1.0, -1.9], Br: [-5.4, 3.3, 2.2, -1.0], I: [-32.3, 9.9, 2.6, -0.4], SH: [2.2, 0.7, 0.4, -3.3], SR: [10.0, -1.9, 0.2, -3.6],
-  SO: [18.0, -3.0, 1.0, 2.0], SO2: [12.3, -1.4, 0.8, 5.1], Si: [11.0, 4.4, -0.8, 0.0], P: [9.0, 3.0, 0.0, 0.0] };
+  SO: [18.0, -3.0, 1.0, 2.0], SO2: [12.3, -1.4, 0.8, 5.1], Si: [11.0, 4.4, -0.8, 0.0], P: [9.0, 3.0, 0.0, 0.0],
+  N3: [11.5, -9.5, 1.2, -3.7], NNO: [18.0, -8.0, 1.0, 0.0], NAzo: [24.2, -5.7, 0.5, 2.3], NIm: [23.5, -7.7, 0.6, -2.6], NCO: [0.8, -5.0, 1.4, -2.0], NCS: [4.5, -2.7, 0.8, -2.3], ONO2: [22.0, -6.0, 0.5, -1.0],
+  OP: [22.5, -8.5, 0.0, -2.5], OCF3: [20.8, -7.5, 1.5, -1.5], SO2N: [15.0, -2.8, 0.5, 3.6], SO2Cl: [16.1, -1.4, 1.1, 6.3], SO2O: [15.0, -2.2, 0.7, 4.5], SCN: [-1.0, 3.0, 1.5, 1.5], SCF3: [-5.0, 8.0, 0.7, 2.7],
+  SF5: [25.0, -2.5, 0.3, 2.7], B: [2.0, 6.7, -0.6, 2.9], CS: [8.0, -1.0, 0.0, 3.0] };
 /* sp3 carbon substituent increments [alpha, beta, gamma] (Pretsch) */
 const C_SUB = { F: [68, 9, -4], Cl: [31, 11, -4], Br: [20, 11, -3], I: [-6, 11, -1], OH: [49, 10, -6], OR: [49, 7, -5], OPh: [54, 6, -5], OAc: [51, 6, -3], NH2: [29, 11, -5], NHR: [37, 8, -4], NR2: [42, 6, -3],
-  NHAc: [28, 7, -4], NR3: [26, 8, -5], NArom: [30, 6, -3], NO2: [63, 4, -4], SH: [11, 12, -4], SR: [20, 7, -3], SO: [31, 5, -3], SO2: [30, 5, -3], CN: [4, 3, -3], vinyl: [20, 6, -0.5], alkynyl: [4.5, 5.5, -3.5],
-  Ph: [23, 9, -2], CHO: [30, -0.5, -2.5], COR: [30, 1, -2], COOH: [21, 3, -2], COOR: [20, 3, -2], CON: [22, 0, -3], COCl: [33, 3, -2], Si: [-3, 2, -1], P: [10, 5, -2], B: [0, 0, 0], X: [0, 0, 0] };
+  NHAc: [28, 7, -4], NR3: [26, 8, -5], NArom: [30, 6, -3], NO2: [63, 4, -4], SH: [11, 12, -4], SR: [20, 7, -3], SO: [42, 5, -3], SO2: [45, 3, -2], SO2N: [43, 3, -2], SO2Cl: [53, 3, -2], SO2O: [45, 3, -2],
+  N3: [40, 7, -4], NNO: [50, 4, -3], NAzo: [50, 5, -3], NIm: [50, 5, -3], NCO: [31, 9, -4], NCS: [38, 6, -3], ONO2: [62, 6, -4], OP: [58, 8, -3], OCF3: [50, 4, -4], SCN: [24, 7, -3], SCF3: [22, 7, -3], SF5: [45, 3, -2], CS: [38, 0, -2], CN: [4, 3, -3], vinyl: [20, 6, -0.5], alkynyl: [4.5, 5.5, -3.5],
+  Ph: [23, 9, -2], CHO: [30, -0.5, -2.5], COR: [30, 1, -2], COOH: [21, 3, -2], COOR: [20, 3, -2], CON: [22, 0, -3], COCl: [33, 3, -2], Si: [2, 2, -1], P: [10, 5, -2], B: [0, 0, 0], X: [0, 0, 0] };
 /* alkene carbon increments [on the carbon the group is attached to, on the other alkene carbon] */
 const C_ALKENE = { Ph: [12.5, -11.0], vinyl: [13.6, -7.0], alkynyl: [-6.0, 6.0], CHO: [13.1, 12.7], COR: [4.5, 6.0], COOH: [5.0, 9.8], COOR: [6.3, 7.0], CON: [5.0, 7.0], COCl: [8.1, 14.0], CN: [-15.1, 14.2],
   OH: [28.8, -39.5], OR: [28.8, -39.5], OPh: [28.8, -39.5], OAc: [18.4, -26.7], NH2: [28.0, -32.0], NHR: [28.0, -32.0], NR2: [28.0, -32.0], NHAc: [23.0, -20.0], NArom: [23.0, -20.0], NO2: [22.3, -0.9],
-  F: [24.9, -34.3], Cl: [2.0, -6.1], Br: [-8.0, -0.9], I: [-38.1, 7.0], SH: [18.0, -16.0], SR: [18.0, -16.0], SO2: [14.5, 7.1], SO: [14.5, 7.1], Si: [16.0, -7.0] };
+  F: [24.9, -34.3], Cl: [2.0, -6.1], Br: [-8.0, -0.9], I: [-38.1, 7.0], SH: [18.0, -16.0], SR: [18.0, -16.0], SO2: [14.5, 7.1], SO: [14.5, 7.1], Si: [16.0, -7.0], N3: [18.0, -14.0], NIm: [18.0, -14.0], NNO: [25.0, -20.0], SCN: [10.0, -4.0], CS: [8.0, 6.0] };
 
 const DAMP_H = [1, 0.8, 0.7, 0.6], DAMP_C = [1, 0.85, 0.7, 0.6];
 function damped(vals, damp) { const v = vals.slice().sort((a, b) => Math.abs(b) - Math.abs(a)); return v.reduce((s, x, i) => s + x * damp[Math.min(i, damp.length - 1)], 0); }
@@ -303,6 +339,9 @@ function fiveRingBase(G, ring, c, which) {
 /* ------------------------------------------------------------------ 1H prediction */
 function alphaIncH(G, c, s) {
   const k = subKey(G, c, s);
+  if (k === 'NO2' && G.atoms[c].nH < 3) return 3.05;
+  if (k === 'I' && G.atoms[c].nH === 3) return 1.3;
+  if (k === 'Br' && G.atoms[c].nH === 3) return 1.8;
   if ((k === 'NH2' || k === 'NHR' || k === 'NR2') && hasArNbr(G, s, c)) return 1.9;
   return H_ALPHA[k] || 0;
 }
@@ -324,7 +363,10 @@ function predictH(G, opt) {
     if (t >= 0) { out.push(Object.assign({}, base, { kind: 'alkyne', shift: alkyneH(G, i, t), label: '≡CH' })); continue; }
     if (a.nb.some(x => x.bd.o === 2)) {
       const p = a.nb.find(x => x.bd.o === 2).j, pe = G.atoms[p].el;
-      if (pe !== 'C') { out.push(Object.assign({}, base, { kind: 'imine', shift: 8.0, label: 'HC=N' })); continue; }
+      if (pe !== 'C') {
+        const N = G.atoms[p], oxime = N.nb.some(x => G.atoms[x.j].el === 'O' && x.j !== i), hz = N.nb.some(x => G.atoms[x.j].el === 'N'), ar = a.nb.some(x => G.atoms[x.j].arom);
+        out.push(Object.assign({}, base, { kind: 'imine', shift: pe !== 'N' ? 9.0 : oxime ? (ar ? 8.1 : 7.4) : hz ? 7.5 : (ar ? 8.3 : 7.7), label: 'HC=N' })); continue;
+      }
       for (const h of vinylH(G, i, p)) out.push(Object.assign({}, base, h)); continue;
     }
     if (a.chg !== 0) continue;
@@ -344,6 +386,13 @@ function predictH(G, opt) {
   return { protons: out, signals: list };
 }
 
+/* count of ortho / para electron-withdrawing groups (NO2, CN, C=O, SO2 ...) on the ring carrying atom c (0 to 1.5) */
+function ewg(G, c) {
+  const ring = G.rings[homeRing(G, c)]; if (!ring || ring.size !== 6) return 0; let n = 0;
+  for (const r of ring.atoms) { const d = ringDist(ring, c, r); if (d !== 1 && d !== 3) continue;
+    for (const { j } of G.atoms[r].nb) { if (ring.atoms.includes(j)) continue; if (/^(NO2|CN|CHO|COR|COOH|COOR|CON|COCl|SO2|SO2N|SO2Cl|SO2O|CF3)$/.test(subKey(G, r, j))) n += d === 3 ? 1 : 0.7; } }
+  return Math.min(n, 1.5);
+}
 function exchangeH(G, i, solvent) {
   const a = G.atoms[i], nb = a.nb.map(x => x.j), dm = solvent === 'DMSO-d6';
   let v = 2.5, env = '';
@@ -351,16 +400,20 @@ function exchangeH(G, i, solvent) {
     const c = nb[0];
     if (c === undefined) { v = 4.8; env = 'water-like'; }
     else if (isCarbonyl(G, c) || (G.atoms[c].el === 'S') || (G.atoms[c].el === 'P')) { v = dm ? 12.2 : 11.0; env = 'acid O–H'; }
-    else if (G.atoms[c].arom) { v = dm ? 9.3 : 5.5; env = 'phenol O–H'; }
+    else if (G.atoms[c].arom) { v = (dm ? 9.3 : 5.5) + ewg(G, c) * (dm ? 1.7 : 0.4); env = 'phenol O–H'; }
+    else if (G.atoms[c].el === 'N') { v = dm ? 11.0 : 8.5; env = 'oxime / N–O–H'; }
+    else if (G.atoms[c].el === 'B') { v = dm ? 8.0 : 6.5; env = 'B–O–H'; }
     else if (G.atoms[c].el === 'C' && hasPi(G, c) && isAlkeneC(G, c)) { v = dm ? 8.0 : 5.5; env = 'enol O–H'; }
     else { v = dm ? 4.5 : 2.5; env = 'alcohol O–H'; }
   } else if (a.el === 'N') {
     const c = nb.find(j => true);
-    if (a.arom) { v = dm ? 11.0 : 8.0; env = 'ring N–H'; }
+    if (a.arom) { const r = G.rings[homeRing(G, i)], az = r && r.atoms.some(x => x !== i && isPyN(G, x)); v = az ? (dm ? 12.4 : 11.0) : (dm ? 11.0 : 8.0); env = 'ring N–H'; }
     else if (a.chg > 0) { v = dm ? 8.5 : 8.0; env = 'N⁺–H'; }
+    else if (nb.some(j => G.atoms[j].nb.some(y => y.bd.o === 2 && G.atoms[y.j].el === 'S') && G.atoms[j].el === 'C')) { v = dm ? 9.3 : 8.0; env = 'thioamide N–H'; }
     else if (c !== undefined && nb.some(j => isCarbonyl(G, j))) { const prim = a.nH === 2; v = (prim ? 6.5 : 7.8) + (dm ? 0.8 : 0); env = 'amide N–H'; if (nb.some(j => isCarbonyl(G, j) && G.atoms[j].nb.some(y => G.atoms[y.j].el === 'O' && y.bd.o === 1) || G.atoms[j].nb.filter(y => G.atoms[y.j].el === 'N').length > 1)) { v = 5.5 + (dm ? 0.8 : 0); env = 'carbamate / urea N–H'; } }
-    else if (nb.some(j => G.atoms[j].el === 'S' && G.atoms[j].nb.some(y => y.bd.o === 2))) { v = 7.8; env = 'sulfonamide N–H'; }
-    else if (nb.some(j => G.atoms[j].arom)) { v = (a.nH === 2 ? 3.6 : 3.8) + (dm ? 1.2 : 0); env = 'aryl amine N–H'; }
+    else if (nb.some(j => G.atoms[j].el === 'S' && G.atoms[j].nb.some(y => y.bd.o === 2))) { v = dm ? 7.3 : 5.0; env = 'sulfonamide N–H'; }
+    else if (nb.some(j => G.atoms[j].arom)) { v = (a.nH === 2 ? 3.6 : 3.8) + (dm ? 1.2 : 0) + ewg(G, nb.find(j => G.atoms[j].arom)) * (dm ? 1.6 : 0.8); env = 'aryl amine N–H'; }
+    else if (nb.some(j => G.atoms[j].el === 'N' || G.atoms[j].el === 'O')) { v = dm ? 5.0 : 4.0; env = 'hydrazine / hydroxylamine N–H'; }
     else { v = (a.nH === 2 ? 1.3 : 1.5) + (dm ? 0.5 : 0); env = 'amine N–H'; }
   } else if (a.el === 'S') {
     v = nb.some(j => G.atoms[j].arom) ? 3.4 : 1.4; env = 'thiol S–H';
@@ -478,18 +531,27 @@ function label(groups, nlines) {
 /* ------------------------------------------------------------------ 13C prediction */
 const CORR = { 1: { 3: -1.1, 4: -3.4 }, 2: { 3: -2.5, 4: -7.5 }, 3: { 2: -3.7, 3: -9.5 }, 4: { 1: -1.5, 2: -8.4 } };
 const RING_CORR = { 3: -18.7, 4: -2.9, 5: -8.8, 6: -5.2, 7: -1.0, 8: -3.0 };
+const HAL_FIRST = { F: [77.3, 72.5, 69, 65], Cl: [27.9, 33.1, 37.8, 42], Br: [12.3, 21.5, 36.9, 45], I: [-18.4, -7, 5.1, 13] };
+const HAL_EXTRA = { F: [33.6, 7.4, 1.6], Cl: [28.4, 23.2, 18.9], Br: [11.4, -9.3, -40.6], I: [-33.1, -86.1, -150] };
 function cSp3(G, c) {
+  const hal = { F: 0, Cl: 0, Br: 0, I: 0 }; let nitro = 0;
+  { const nF = G.atoms[c].nb.filter(x => G.atoms[x.j].el === 'F').length;
+    if (nF >= 3) { const o = G.atoms[c].nb.map(x => G.atoms[x.j]); return o.some(x => x.el === 'O') ? 120.5 : G.atoms[c].nb.some(x => isCarbonyl(G, x.j)) ? 116 : o.some(x => x.arom) ? 124 : 125; } }
   const dist = new Map([[c, 0]]), q = [c]; let nA = 0, nB = 0, nG = 0, nD = 0; const al = [], be = [], ga = [];
   while (q.length) {
     const u = q.shift(), du = dist.get(u); if (du >= 4) continue;
     for (const { j: v } of G.atoms[u].nb) {
       if (dist.has(v)) continue; dist.set(v, du + 1);
       if (isSp3C(G, v)) { q.push(v); const d = du + 1; if (d === 1) nA++; else if (d === 2) nB++; else if (d === 3) nG++; else nD++; }
-      else if (du + 1 <= 3) { const k = subKey(G, u, v), row = C_SUB[k]; if (row) [al, be, ga][du].push(row[du]); }
+      else if (du === 0 && hal[G.atoms[v].el] !== undefined) hal[G.atoms[v].el]++;
+      else if (du === 0 && subKey(G, u, v) === 'NO2') nitro++;
+      else if (du + 1 <= 3) { const k = subKey(G, u, v), row = (k === 'NR3' && G.atoms[v].nH === 0) ? [58, 1, -3] : C_SUB[k]; if (row) [al, be, ga][du].push(row[du]); }
     }
   }
   let v = -2.3 + 9.1 * nA + 9.4 * nB - 2.5 * nG + 0.3 * nD + damped(al, DAMP_C) + be.reduce((s, x) => s + x, 0) + ga.reduce((s, x) => s + x, 0);
   const nC = G.atoms[c].nb.filter(x => isSp3C(G, x.j)).length;
+  v += [0, 63, 105, 124, 130][Math.min(nitro, 4)];
+  for (const e in hal) if (hal[e]) { v += HAL_FIRST[e][Math.min(nC, 3)]; for (let k = 1; k < hal[e]; k++) v += HAL_EXTRA[e][Math.min(k - 1, 2)]; }
   if (CORR[nC]) for (const { j } of G.atoms[c].nb) if (isSp3C(G, j)) { const dj = G.atoms[j].nb.filter(x => isSp3C(G, x.j)).length; v += CORR[nC][dj] || 0; }
   const k = smallestRing(G, c);
   if (k) { const r = G.rings.filter(r => !r.arom && r.atoms.includes(c) && r.size === k)[0]; if (r && r.atoms.every(x => isSp3C(G, x))) v += RING_CORR[k] || 0; }
@@ -544,9 +606,31 @@ function cCarbonyl(G, c) {
   return 175;
 }
 
+function cCumulene(G, c) {
+  const p = G.atoms[c].nb.filter(x => x.bd.o === 2).map(x => G.atoms[x.j].el).sort().join('');
+  return { NO: 122, NS: 130, NN: 140, CO: 195, OO: 125, CC: 210, SS: 193, CN: 200 }[p] || 150;
+}
+function cImine(G, c, nIdx) {
+  const a = G.atoms[c], N = G.atoms[nIdx], nOth = N.nb.filter(x => x.j !== c), cOth = a.nb.filter(x => x.j !== nIdx);
+  const aryl = cOth.some(x => G.atoms[x.j].arom), ald = a.nH > 0;
+  if (cOth.some(x => G.atoms[x.j].el === 'N')) return 156;                       /* amidine / guanidine */
+  if (cOth.some(x => G.atoms[x.j].el === 'O')) return 165;                       /* imidate */
+  if (nOth.some(x => G.atoms[x.j].el === 'O')) return ald ? (aryl ? 148 : 151) : (aryl ? 155 : 157);   /* oxime */
+  if (nOth.some(x => G.atoms[x.j].el === 'N')) return ald ? (aryl ? 137 : 143) : 148;                   /* hydrazone */
+  return ald ? (aryl ? 160 : 163) : (aryl ? 165 : 167);                          /* imine */
+}
+function cThione(G, c) {
+  const k = G.atoms[c].nb.filter(x => !(x.bd.o === 2 && G.atoms[x.j].el === 'S')).map(x => G.atoms[x.j].el).sort().join('');
+  return { NN: 182, CN: 200, N: 200, NS: 190, OS: 190, NO: 190, OO: 190, CC: 250, SS: 223, OS2: 215 }[k] || (k === 'OS' ? 215 : 200);
+}
+
 function cSp(G, c) {
   const a = G.atoms[c], t = tripleNbr(G, c), te = G.atoms[t].el;
-  if (te === 'N') return 118.5;
+  if (te === 'N') {
+    if (a.chg < 0) return 157;
+    const o = a.nb.filter(x => x.j !== t)[0]; if (!o) return 118.5;
+    const e = G.atoms[o.j].el; return e === 'S' ? 112 : e === 'O' ? 109 : e === 'N' ? 117 : e === 'Cl' ? 110 : e === 'Br' ? 105 : 118.5;
+  }
   const own = a.nb.filter(x => x.j !== t)[0], oth = G.atoms[t].nb.filter(x => x.j !== c)[0];
   const kind = (n, from) => { if (!n) return 'H'; const k = subKey(G, from, n.j); return k === 'Ph' ? 'aryl' : /^(CO|CHO|CON)/.test(k) ? 'CO' : 'alkyl'; };
   const A = { H: -12, alkyl: 0, aryl: 1, CO: -3 }, B = { H: 4, alkyl: 0, aryl: 8.7, CO: -4 };
@@ -560,9 +644,10 @@ function predictC(G, opt) {
     const a = G.atoms[i]; if (a.el !== 'C') continue;
     let v, type;
     if (a.arom) { v = cArom(G, i); }
+    else if (a.nb.filter(x => x.bd.o === 2).length > 1) v = cCumulene(G, i);
     else if (isCarbonyl(G, i)) v = cCarbonyl(G, i);
     else if (tripleNbr(G, i) >= 0) v = cSp(G, i);
-    else if (a.nb.some(x => x.bd.o === 2)) { const p = a.nb.find(x => x.bd.o === 2).j; v = G.atoms[p].el === 'C' ? (a.nb.filter(x => x.bd.o === 2).length > 1 ? 100 : cAlkene(G, i)) : 158; }
+    else if (a.nb.some(x => x.bd.o === 2)) { const p = a.nb.find(x => x.bd.o === 2).j, pe = G.atoms[p].el; v = pe === 'C' ? cAlkene(G, i) : pe === 'N' ? cImine(G, i, p) : pe === 'S' ? cThione(G, i) : 158; }
     else if (a.chg === 0) v = cSp3(G, i);
     else v = 100;
     type = a.nH === 3 ? 'CH3' : a.nH === 2 ? 'CH2' : a.nH === 1 ? 'CH' : 'C';
@@ -589,7 +674,7 @@ function predict(molfileText, opt) {
   if (G.unknown.length) throw new Error('Not supported yet: ' + [...new Set(G.unknown)].join(', '));
   const H = predictH(G, opt), C = predictC(G, opt);
   const nHtot = G.atoms.reduce((s, a) => s + a.nH, 0), nHobs = H.signals.filter(s => !s.exch).reduce((s, x) => s + x.n, 0);
-  return { G, formula: formula(G), nHtotal: nHtot, nHobserved: nHobs, h: H, c: C };
+  return { G, formula: formula(G), nHtotal: nHtot, nHobserved: nHobs, h: H, c: C, notes: G.notes.slice() };
 }
 
 /* ------------------------------------------------------------------ spectrum synthesis */

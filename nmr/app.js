@@ -173,7 +173,7 @@ function renderTable() {
       tr.innerHTML = '<td class="n">' + s.shift.toFixed(2) + '</td><td class="n">' + s.n + '</td><td>' + s.mult + '</td><td class="n">' + Jtext(s) + '</td><td>' + envName(s) + '</td><td class="n">' + s.atoms.map(a => a + 1).join(', ') + '</td>';
       tr.onclick = () => select(s.id); tb.appendChild(tr);
     }
-    note.textContent = r.formula + ' · ' + r.nHobserved + ' of ' + r.nHtotal + ' H shown' + (r.nHobserved < r.nHtotal ? ' (rest are exchangeable O–H / N–H)' : '') + '. Empirical estimate: typically within 0.3 ppm.' + (r.h.signals.some(q => q.kind === 'vinyl') ? ' Alkene cis/trans (and J) follow the drawn geometry.' : '');
+    note.textContent = r.formula + ' · ' + r.nHobserved + ' of ' + r.nHtotal + ' H shown' + (r.nHobserved < r.nHtotal ? ' (rest are exchangeable O–H / N–H)' : '') + '. Empirical estimate: typically within 0.3 ppm.' + (r.h.signals.some(q => q.kind === 'vinyl') ? ' Alkene cis/trans (and J) follow the drawn geometry.' : '') + (r.notes.length ? ' ' + r.notes.join(' ') : '');
   } else {
     th.innerHTML = '<tr><th class="n">δ (ppm)</th><th class="n">C</th><th>Type</th><th>Atoms</th></tr>';
     for (const s of r.c.signals) {
@@ -182,7 +182,7 @@ function renderTable() {
       tr.innerHTML = '<td class="n">' + s.shift.toFixed(1) + '</td><td class="n">' + s.n + '</td><td>' + s.type + (S.nuc === 'DEPT' ? (s.type === 'CH2' ? ' (down)' : ' (up)') : '') + '</td><td class="n">' + s.atoms.map(a => a + 1).join(', ') + '</td>';
       tr.onclick = () => select(s.id); tb.appendChild(tr);
     }
-    note.textContent = r.formula + ' · ' + r.c.signals.length + ' distinct carbon environments. Empirical estimate: typically within 5 ppm; peak heights are indicative only.';
+    note.textContent = r.formula + ' · ' + r.c.signals.length + ' distinct carbon environments. Empirical estimate: typically within 5 ppm; peak heights are indicative only.' + (r.notes.length ? ' ' + r.notes.join(' ') : '');
   }
   markRow();
 }
