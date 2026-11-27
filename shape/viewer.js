@@ -1,4 +1,4 @@
-/* viewer.js: three.js viewer for CompChemX Shape. Ball-and-stick, electron-domain clouds, polyhedron, dipole, angle labels. */
+/* viewer.js: three.js viewer for CCX Shape. Ball-and-stick, electron-domain clouds, polyhedron, dipole, angle labels. */
 (function (root) {
 'use strict';
 const COL = { H: 0xffffff, C: 0x909090, N: 0x3050f8, O: 0xff2a2a, F: 0x90e050, Cl: 0x1ff01f, Br: 0xa62929, I: 0x940094, S: 0xffe030, P: 0xff8000, B: 0xffb5b5, Xe: 0x429eb0, Si: 0xf0c8a0, Al: 0xbfa6a6, Se: 0xffa100, Be: 0xc2ff00, Ge: 0x668f8f, As: 0xbd80e3, Sn: 0x668080, Sb: 0x9e63b5, Te: 0xd47a00, Kr: 0x5cb8d1, Ar: 0x80d1e3, Ne: 0xb3e3f5, He: 0xd9ffff };
@@ -14,7 +14,7 @@ function create(host, THREE) {
   grp.quaternion.copy(Q0());
   const turn = (ax, ay) => { const q = new T.Quaternion().setFromEuler(new T.Euler(ax, ay, 0, 'YXZ')); grp.quaternion.premultiply(q).normalize(); };
   let model = null, an = null, sel = -1, spin = false, dist = 9, radius = 3;
-  const opt = { lp: true, bond: false, pi: false, poly: false, dip: true, bdip: true, ang: false, labels: true, style: 'ball' };
+  const opt = { lp: true, bond: false, pi: false, en: false, poly: false, dip: true, bdip: true, ang: false, labels: true, style: 'ball' };
   const items = [], atomMeshes = [], v = (a) => new T.Vector3(a[0], a[1], a[2]);
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#888';
   function clear() { while (grp.children.length) { const o = grp.children.pop(); o.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) { if (x.material.map) x.material.map.dispose(); x.material.dispose(); } }); } atomMeshes.length = 0; }
@@ -36,7 +36,9 @@ function create(host, THREE) {
     A.forEach((a, i) => {
       const r = (RAD[a.el] || .45) * (ball ? 1 : .55) * (opt.style === 'wire' ? .3 : 1), m = new T.Mesh(new T.SphereGeometry(r, 24, 18), new T.MeshPhongMaterial({ color: COL[a.el] || 0xcc66cc, shininess: 60, emissive: i === sel ? 0x553322 : 0 }));
       m.position.copy(P[i]); m.userData.atom = i; grp.add(m); atomMeshes.push(m);
-      if (opt.labels && a.el !== 'H') { const s = sprite(a.el + (a.q ? (Math.abs(a.q) > 1 ? Math.abs(a.q) : '') + (a.q > 0 ? '+' : '−') : ''), '#' + (COL[a.el] ? new T.Color(COL[a.el]).lerp(new T.Color(css('--fg')), .5).getHexString() : 'fff')); s.position.copy(P[i]); s.scale.multiplyScalar(.7); grp.add(s); }
+      const showEl = opt.labels && a.el !== 'H', showEN = opt.en && a.en;
+      if (showEl || showEN) { const chg = a.q ? (Math.abs(a.q) > 1 ? Math.abs(a.q) : '') + (a.q > 0 ? '+' : '−') : '', txt = (showEl ? a.el + chg : '') + (showEl && showEN ? ' ' : '') + (showEN ? a.en.toFixed(2) : '');
+        const s = sprite(txt, showEN && !showEl ? '#ffd24d' : '#' + (COL[a.el] ? new T.Color(COL[a.el]).lerp(new T.Color(css('--fg')), .5).getHexString() : 'fff')); s.position.copy(P[i]); s.scale.multiplyScalar(.7 * (txt.length > 4 ? 1.25 : 1)); grp.add(s); }
     });
     model.bonds.forEach(b => {
       const n = Math.max(1, Math.round(b.order)), a = P[b.a], c = P[b.b], d = c.clone().sub(a).normalize();
@@ -81,7 +83,9 @@ function create(host, THREE) {
       let off = new T.Vector3(0, 1, 0).cross(d); if (off.lengthSq() < 1e-4) off = new T.Vector3(1, 0, 0).cross(d); off.normalize();
       const ra = (RAD[A[bd.a].el] || .4), rc = (RAD[A[bd.b].el] || .4), s0 = Math.min(L * .3, ra + .12), s1 = Math.min(L * .3, rc + .12), o = off.multiplyScalar(.42);
       arrow(a.clone().addScaledVector(d, s0).add(o), c.clone().addScaledVector(d, -s1).add(o), .035, 0xff4d9a, .1);
-      const tail = new T.Mesh(new T.SphereGeometry(.07, 10, 8), new T.MeshPhongMaterial({ color: 0xff4d9a })); tail.position.copy(a.clone().addScaledVector(d, s0).add(o)); grp.add(tail); });
+      const tail = new T.Mesh(new T.SphereGeometry(.07, 10, 8), new T.MeshPhongMaterial({ color: 0xff4d9a })); tail.position.copy(a.clone().addScaledVector(d, s0).add(o)); grp.add(tail);
+      const dm = sprite('δ+', '#ff4d9a'), dn = sprite('δ−', '#ff4d9a'); dm.scale.multiplyScalar(.7); dn.scale.multiplyScalar(.7);
+      dm.position.copy(a.clone().addScaledVector(d, Math.max(s0 - .1, .05)).addScaledVector(o, 1.5)); dn.position.copy(c.clone().addScaledVector(d, -Math.max(s1 - .1, .05)).addScaledVector(o, 1.5)); grp.add(dm); grp.add(dn); });
     if (opt.dip && dp && dp.polar) {                      /* net dipole in green, drawn clear of the atoms */
       const d = v(dp.vector).normalize(), c = new T.Vector3(); P.forEach(p => c.add(p)); c.multiplyScalar(1 / P.length);
       let perp = new T.Vector3(0, 1, 0).cross(d); if (perp.lengthSq() < 1e-4) perp = new T.Vector3(1, 0, 0).cross(d); perp.normalize();

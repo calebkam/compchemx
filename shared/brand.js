@@ -1,16 +1,16 @@
 /* One place for every product name. To rename the platform, change `platform` below (and nothing else).
    - The whole platform is `platform` (now "CompChemX").
-   - Each tool is shown as "<platform> <suffix>", keyed by its folder name: draw/ is the 2D drawing tool, dock/ is the docking tool, nmr/ is the NMR simulator.
+   - Each tool is shown as "CCX <name>", keyed by its folder name: draw/ is the 2D drawing tool, dock/ is the docking tool, nmr/ is the NMR simulator.
    Folder names, URLs and the version keys in versions.js do not change when you rename, so existing links keep working.
    Pages show these names through data-brand attributes (filled in when the page loads) and through window.cpName(). */
 window.CP_BRAND = {
   platform: 'CompChemX',
   tools: { draw: 'Draw', dock: 'Dock', nmr: 'NMR', shape: 'Shape' }
 };
-/* cpName('site') -> platform name; cpName('draw') -> "CompChemX Draw"; cpName('dock') -> "CompChemX Dock" */
+/* cpName('site') -> platform name; cpName('draw') -> "CCX Draw"; cpName('dock') -> "CCX Dock" */
 window.cpName = function (id) {
   var b = window.CP_BRAND;
-  return !id || id === 'site' || id === 'platform' ? b.platform : (b.tools[id] ? b.platform + ' ' + b.tools[id] : b.platform);
+  return !id || id === 'site' || id === 'platform' ? b.platform : (b.tools[id] ? 'CCX ' + b.tools[id] : b.platform);
 };
 /* <span data-brand="platform"></span>, <span data-brand="dock"></span>; optional data-brand-suffix=" Changelog" for titles. */
 window.cpBrandApply = function (root) {

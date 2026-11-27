@@ -1,7 +1,7 @@
 /* ============================ shape.js ============================
-   CompChemX Shape: Lewis structures, VSEPR geometry and molecular shape. Pure functions, no DOM, no network.
+   CCX Shape: Lewis structures, VSEPR geometry and molecular shape. Pure functions, no DOM, no network.
 
-   Input : a V2000 molfile (from CompChemX Draw).
+   Input : a V2000 molfile (from CCX Draw).
    Output: Lewis structure (valence electrons, lone pairs, formal charges, resonance forms, octet check),
            VSEPR analysis per atom (AXnEm, electron geometry, molecular shape, hybridisation, ideal and measured angles),
            a 3D model, electron-domain directions for drawing clouds, and a bond-dipole polarity estimate.
@@ -414,7 +414,7 @@ function analyze(molfileText, opt) {
   }
   const cen = X.reduce((s, p) => v3.add(s, p), [0, 0, 0]).map(v => v / G.n); X = X.map(p => v3.sub(p, cen));
   const atoms = analyse(G, R, X, lpWorld), pol = polarity(G, R, X);
-  const model = { atoms: G.atoms.map((a, i) => ({ el: a.el, x: X[i][0], y: X[i][1], z: X[i][2], q: a.chg, imp: a.imp, lp: lpWorld[i], rad: radWorld[i], lpCount: a.lp })), bonds: G.bonds.map(b => ({ a: b.a, b: b.b, o: b.o, order: R.hybrid.bo[b.i] })) };
+  const model = { atoms: G.atoms.map((a, i) => ({ el: a.el, x: X[i][0], y: X[i][1], z: X[i][2], q: a.chg, imp: a.imp, lp: lpWorld[i], rad: radWorld[i], lpCount: a.lp, en: EL[a.el].en })), bonds: G.bonds.map(b => ({ a: b.a, b: b.b, o: b.o, order: R.hybrid.bo[b.i] })) };
   return { G, resonance: R, lewis: L, atoms, polarity: pol, model, method, warnings: warn, layout: layout2D(G, R.forms[0].state) };
 }
 

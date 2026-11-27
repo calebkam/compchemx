@@ -1,7 +1,7 @@
 /* ============================ nmr.js ============================
-   CompChemX NMR: an empirical NMR predictor and spectrum simulator. No libraries, no network.
+   CCX NMR: an empirical NMR predictor and spectrum simulator. No libraries, no network.
 
-   Input : a V2000 molfile (from CompChemX Draw).
+   Input : a V2000 molfile (from CCX Draw).
    Output: predicted 1H and 13C shifts, first-order multiplets and a simulated spectrum.
 
    Method (all additive increment schemes, the kind found in Pretsch, "Structure Determination of Organic Compounds"):

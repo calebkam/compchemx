@@ -10,4 +10,4 @@
 
 Updating later: open the file on GitHub, choose the pencil, or use **Add file → Upload files** and drop the changed files (keep their folders) to replace them.
 
-Check after publishing: open the home page, then each tool; switch theme; in CompChemX Dock press "Load example".
+Check after publishing: open the home page, then each tool; switch theme; in CCX Dock press "Load example".

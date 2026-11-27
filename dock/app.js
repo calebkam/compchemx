@@ -86,7 +86,7 @@ function blMolfile() { const w = blWin(); if (!w) return null; try { if (typeof 
 async function loadMolvex() {
   BL.frame.addEventListener('load', () => { BL.ready = true; syncBLTheme(); poll(); });
   try { const r = await fetch('../draw/index.html'); if (!r.ok) throw new Error('HTTP ' + r.status); BL.frame.srcdoc = await r.text(); }
-  catch (e) { BL.err = 'The CompChemX Draw editor could not be loaded (' + e.message + ').'; renderPanel(); }
+  catch (e) { BL.err = 'The CCX Draw editor could not be loaded (' + e.message + ').'; renderPanel(); }
 }
 function syncBLTheme() { const w = blWin(); try { if (w && w.document) { w.document.documentElement.dataset.theme = dark() ? 'dark' : 'light'; } } catch (e) {} }
 function parseLive(t) {

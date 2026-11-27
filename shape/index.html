@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
-<title data-brand="shape">CompChemX Shape</title>
-<link rel="icon" href="../shared/favicon.svg?v=0.4.3" type="image/svg+xml">
+<title data-brand="shape">CCX Shape</title>
+<link rel="icon" href="../shared/favicon.svg?v=0.4.4" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="../shared/theme.js?v=0.4.3"></script>
-<script src="../shared/brand.js?v=0.4.3"></script>
-<script src="../shared/versions.js?v=0.4.3"></script>
+<script src="../shared/theme.js?v=0.4.4"></script>
+<script src="../shared/brand.js?v=0.4.4"></script>
+<script src="../shared/versions.js?v=0.4.4"></script>
 <script src="../shared/vendor/three.min.js"></script>
 <style>
 :root{
@@ -109,7 +109,7 @@ tr.row{cursor:pointer}tr.row:hover td{background:var(--accent-soft)}tr.row.sel t
 <body>
 <div id="shell">
   <header id="top">
-    <a class="brand" href="../" title="All tools" style="color:inherit;text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 3l8 5v8l-8 5-8-5V8z"/><path d="M12 3v18M4 8l16 8M20 8L4 16"/></svg><span data-brand="shape">CompChemX Shape</span></a>
+    <a class="brand" href="../" title="All tools" style="color:inherit;text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 3l8 5v8l-8 5-8-5V8z"/><path d="M12 3v18M4 8l16 8M20 8L4 16"/></svg><span data-brand="shape">CCX Shape</span></a>
     <span id="sub">Draw a molecule on the left. Lewis structure, VSEPR geometry and a 3D electron-domain view update as you draw.</span>
     <button id="b-theme" class="btn" title="Switch light / dark">Theme</button>
   </header>
@@ -121,6 +121,7 @@ tr.row{cursor:pointer}tr.row:hover td{background:var(--accent-soft)}tr.row.sel t
         <div class="grp"><label>Style</label><div class="seg" id="sty"><button data-v="ball" class="on">Ball &amp; stick</button><button data-v="stick">Stick</button><button data-v="wire">Wire</button></div></div>
         <label class="chk"><input type="checkbox" data-o="bdip" checked> <span style="color:#ff4d9a">Bond dipoles</span></label>
         <label class="chk"><input type="checkbox" data-o="dip" checked> <span style="color:#38d17a">Net dipole</span></label>
+        <label class="chk"><input type="checkbox" data-o="en"> Electronegativity</label>
         <label class="chk"><input type="checkbox" data-o="lp" checked> Lone pairs</label>
         <label class="chk"><input type="checkbox" data-o="bond"> Bond domains</label>
         <label class="chk"><input type="checkbox" data-o="pi"> π clouds</label>
@@ -139,10 +140,10 @@ tr.row{cursor:pointer}tr.row:hover td{background:var(--accent-soft)}tr.row.sel t
   </div>
 </div>
 <div id="toast" hidden></div>
-<script src="../dock/chem.js?v=0.4.3"></script>
-<script src="shape.js?v=0.4.3"></script>
-<script src="viewer.js?v=0.4.3"></script>
-<script src="app.js?v=0.4.3"></script>
-<script src="../shared/nav.js?v=0.4.3"></script>
+<script src="../dock/chem.js?v=0.4.4"></script>
+<script src="shape.js?v=0.4.4"></script>
+<script src="viewer.js?v=0.4.4"></script>
+<script src="app.js?v=0.4.4"></script>
+<script src="../shared/nav.js?v=0.4.4"></script>
 </body>
 </html>

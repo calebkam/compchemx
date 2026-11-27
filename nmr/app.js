@@ -1,4 +1,4 @@
-/* CompChemX NMR page logic: embeds CompChemX Draw, predicts with nmr.js, draws the spectrum, table and structure. */
+/* CCX NMR page logic: embeds CCX Draw, predicts with nmr.js, draws the spectrum, table and structure. */
 (function () {
 'use strict';
 const $ = s => document.querySelector(s);
@@ -7,7 +7,7 @@ const dark = () => { const t = document.documentElement.dataset.theme; return t 
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const toast = m => { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2200); };
 
-/* ---------------- Draw bridge (same contract as CompChemX Dock: global molfile()) ---------------- */
+/* ---------------- Draw bridge (same contract as CCX Dock: global molfile()) ---------------- */
 const BL = { frame: $('#bl') };
 const blWin = () => { try { return BL.frame.contentWindow; } catch (e) { return null; } };
 function molfile() { const w = blWin(); try { if (w && typeof w.molfile === 'function') return w.molfile(); } catch (e) {} return null; }
@@ -36,7 +36,7 @@ function syncTheme() { const w = blWin(); try { if (w && w.document) w.document.
 async function loadDraw() {
   BL.frame.addEventListener('load', () => { syncTheme(); prepareDraw(); fitDraw(); poll(); });
   try { const r = await fetch('../draw/index.html'); if (!r.ok) throw new Error('HTTP ' + r.status); BL.frame.srcdoc = await r.text(); }
-  catch (e) { $('#msg').textContent = 'The CompChemX Draw editor could not be loaded (' + e.message + ').'; }
+  catch (e) { $('#msg').textContent = 'The CCX Draw editor could not be loaded (' + e.message + ').'; }
 }
 function poll() { if (S.hold) return; const t = molfile(); if (t == null || t === S.last) return; S.last = t; update(); }
 setInterval(() => { poll(); fitDraw(); }, 600);

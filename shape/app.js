@@ -1,4 +1,4 @@
-/* CompChemX Shape page logic: embeds CompChemX Draw, runs shape.js, draws the Lewis structure, the 3D view and the VSEPR table. */
+/* CCX Shape page logic: embeds CCX Draw, runs shape.js, draws the Lewis structure, the 3D view and the VSEPR table. */
 (function () {
 'use strict';
 const $ = s => document.querySelector(s);
@@ -36,7 +36,7 @@ function syncTheme() { const w = blWin(); try { if (w && w.document) w.document.
 async function loadDraw() {
   BL.frame.addEventListener('load', () => { syncTheme(); prepareDraw(); fitDraw(); poll(); });
   try { const r = await fetch('../draw/index.html'); if (!r.ok) throw new Error('HTTP ' + r.status); BL.frame.srcdoc = await r.text(); }
-  catch (e) { $('#vmsg').textContent = 'The CompChemX Draw editor could not be loaded (' + e.message + ').'; }
+  catch (e) { $('#vmsg').textContent = 'The CCX Draw editor could not be loaded (' + e.message + ').'; }
 }
 function poll() { if (S.hold) return; const t = molfile(); if (t == null || t === S.last) return; S.last = t; update(); }
 setInterval(() => { poll(); fitDraw(); }, 600);
