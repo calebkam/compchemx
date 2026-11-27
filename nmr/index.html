@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
 <title data-brand="nmr">CCX NMR</title>
-<link rel="icon" href="../shared/favicon.svg?v=0.4.5" type="image/svg+xml">
+<link rel="icon" href="../shared/favicon.svg?v=0.4.6" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="../shared/theme.js?v=0.4.5"></script>
-<script src="../shared/brand.js?v=0.4.5"></script>
-<script src="../shared/versions.js?v=0.4.5"></script>
+<script src="../shared/theme.js?v=0.4.6"></script>
+<script src="../shared/brand.js?v=0.4.6"></script>
+<script src="../shared/versions.js?v=0.4.6"></script>
 <style>
 :root{
   --bg:#1A1918; --panel:#232220; --line:#3A3835; --fg:#ECE8E1; --muted:#9A958B;
@@ -115,9 +115,10 @@ tr.row{cursor:pointer}tr.row:hover td{background:var(--accent-soft)}tr.row.sel t
         <div class="grp"><label for="solv">Solvent</label><select id="solv"><option>CDCl3</option><option>DMSO-d6</option><option>CD3OD</option><option>D2O</option><option>acetone-d6</option></select></div>
         <label class="chk" id="exwrap"><input type="checkbox" id="ex" checked> O–H, N–H</label>
         <label class="chk"><input type="checkbox" id="nums"> Atom numbers</label>
-        <div class="tools"><button class="btn sm" id="b-reset">Reset zoom</button><button class="btn sm" id="b-copy">Copy report</button><button class="btn sm" id="b-csv">CSV</button><button class="btn sm" id="b-png">PNG</button></div>
+        <span id="intwrap" class="grp"><label class="chk"><input type="checkbox" id="icurve" checked> Integral curve</label><label class="chk"><input type="checkbox" id="ibrace" checked> Brace</label></span>
+        <div class="tools"><button class="btn sm" id="b-exp" title="Drag across the spectrum to add an expansion (or hold Alt and drag)">Add expansion</button><button class="btn sm" id="b-expclr" hidden>Clear expansions</button><button class="btn sm" id="b-reset">Reset view</button><button class="btn sm" id="b-copy">Copy report</button><button class="btn sm" id="b-csv">CSV</button><button class="btn sm" id="b-png">PNG</button></div>
       </div>
-      <div id="specbox"><canvas id="spec"></canvas><div id="msg">Draw a structure to begin.</div><div id="tip" hidden></div><div id="hint">Drag to zoom · wheel to zoom · double-click to reset · click a peak to highlight its atoms</div></div>
+      <div id="specbox"><canvas id="spec"></canvas><div id="msg">Draw a structure to begin.</div><div id="tip" hidden></div><div id="hint">Drag: zoom · Wheel: peak height · Middle-drag: pan · Alt+drag: expansion · Double-click: reset</div></div>
       <div class="split h" id="sp-h" role="separator" aria-orientation="horizontal" aria-label="Resize the spectrum" tabindex="0" title="Drag to resize the spectrum · double-click to reset"></div>
       <div id="low">
         <div id="strbox"><svg id="str" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg></div>
@@ -127,8 +128,8 @@ tr.row{cursor:pointer}tr.row:hover td{background:var(--accent-soft)}tr.row.sel t
   </div>
 </div>
 <div id="toast" hidden></div>
-<script src="nmr.js?v=0.4.5"></script>
-<script src="app.js?v=0.4.5"></script>
-<script src="../shared/nav.js?v=0.4.5"></script>
+<script src="nmr.js?v=0.4.6"></script>
+<script src="app.js?v=0.4.6"></script>
+<script src="../shared/nav.js?v=0.4.6"></script>
 </body>
 </html>
