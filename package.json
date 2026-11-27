@@ -5,7 +5,7 @@
   "author": "Caleb Kam",
   "description": "Browser-based chemistry tools: CompChemX Draw, Dock and NMR.",
   "scripts": {
-    "test": "node dock/test/chem.test.js && node dock/test/dock.test.js && node dock/test/vina.test.js && node dock/test/ix.test.js && node dock/test/density.test.js && node draw/test/smilesin.test.js && node draw/test/iupac.test.js && node nmr/test/nmr.test.js",
+    "test": "node dock/test/chem.test.js && node dock/test/dock.test.js && node dock/test/vina.test.js && node dock/test/ix.test.js && node dock/test/density.test.js && node draw/test/smilesin.test.js && node draw/test/iupac.test.js && node nmr/test/nmr.test.js && node shape/test/shape.test.js",
     "serve": "python3 -m http.server 8000"
   }
 }

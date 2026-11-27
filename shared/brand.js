@@ -5,7 +5,7 @@
    Pages show these names through data-brand attributes (filled in when the page loads) and through window.cpName(). */
 window.CP_BRAND = {
   platform: 'CompChemX',
-  tools: { draw: 'Draw', dock: 'Dock', nmr: 'NMR' }
+  tools: { draw: 'Draw', dock: 'Dock', nmr: 'NMR', shape: 'Shape' }
 };
 /* cpName('site') -> platform name; cpName('draw') -> "CompChemX Draw"; cpName('dock') -> "CompChemX Dock" */
 window.cpName = function (id) {

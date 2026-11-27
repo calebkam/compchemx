@@ -14,21 +14,16 @@
     var a = document.createElement('a'); a.className = brand.className; a.href = home; a.title = 'All tools'; a.innerHTML = brand.innerHTML;
     a.style.cssText = 'color:inherit;text-decoration:none'; brand.replaceWith(a);
   }
-  var own = document.getElementById('b-theme');
-  if (own) { /* Draw, Dock: a Home button beside their own theme button, styled like it */
-    var h = document.createElement('a'); h.href = home; h.id = 'cp-home'; h.className = own.className; h.textContent = '\u2190 Home'; h.title = 'Back to all tools';
-    h.style.cssText = 'text-decoration:none;display:inline-flex;align-items:center;justify-content:center;color:inherit'; own.parentNode.insertBefore(h, own);
-  } else if (!document.getElementById('cp-theme-btn')) { /* tools without a theme button of their own */
-    var host = document.querySelector('header') || document.body, n = document.createElement('div'); n.className = 'cp-nav';
-    n.innerHTML = '<a href="' + home + '" id="cp-home">\u2190 Home</a><button type="button" id="cp-theme-btn" title="Switch dark / light">Theme</button>';
+  /* Home button: first thing in the header, filled accent colour, with a house icon, so it can't be mistaken for the tool's own buttons */
+  var hdr = document.getElementById('top') || document.querySelector('header'), hh = document.createElement('a');
+  hh.href = home; hh.id = 'cp-home'; hh.title = 'Back to all CompChemX tools'; hh.setAttribute('aria-label', 'Home: all tools');
+  hh.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/></svg><span>Home</span>';
+  hh.style.cssText = 'flex:none;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 13px 0 11px;margin-right:6px;border-radius:6px;background:var(--accent);color:var(--accent-fg,#fff);font:600 13px/1 var(--font-ui,var(--ui,var(--sans,system-ui,sans-serif)));text-decoration:none;white-space:nowrap;box-shadow:0 1px 0 rgba(0,0,0,.25)';
+  hh.addEventListener('mouseenter', function () { hh.style.filter = 'brightness(1.1)'; }); hh.addEventListener('mouseleave', function () { hh.style.filter = ''; });
+  if (hdr) hdr.insertBefore(hh, hdr.firstChild); else { hh.style.cssText += ';position:fixed;top:10px;left:10px;z-index:50'; document.body.appendChild(hh); }
+  if (!document.getElementById('b-theme') && !document.getElementById('cp-theme-btn')) { /* tools without a theme button of their own */
+    var host = hdr || document.body, n = document.createElement('div'); n.className = 'cp-nav';
+    n.innerHTML = '<button type="button" id="cp-theme-btn" title="Switch dark / light">Theme</button>';
     host.appendChild(n); n.querySelector('button').addEventListener('click', function () { window.CPTheme.toggle(); });
-  }
-  /* version chip, taken from shared/versions.js using this page's folder name */
-  var parts = location.pathname.split('/').filter(Boolean), id = parts[parts.length - 1] === 'index.html' ? parts[parts.length - 2] : parts[parts.length - 1];
-  var ver = window.CP_VERSIONS && window.CP_VERSIONS[id];
-  if (ver) {
-    var chip = document.createElement('a'); chip.className = 'cp-ver'; chip.id = 'cp-version'; chip.href = new URL('../changelog/', location.href).href; chip.style.textDecoration = 'none'; chip.textContent = window.cpVer(ver); chip.title = 'Version ' + ver + ' \u00b7 see the changelog';
-    var anchor = document.getElementById('b-theme') || document.getElementById('cp-theme-btn');
-    if (anchor) anchor.insertAdjacentElement('afterend', chip);
   }
 })();

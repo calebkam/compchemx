@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title data-brand="platform">CompChemX</title>
-<link rel="icon" href="shared/favicon.svg?v=0.3.3" type="image/svg+xml">
+<link rel="icon" href="shared/favicon.svg?v=0.4.3" type="image/svg+xml">
 <meta name="description" content="CompChemX: browser-based tools for drawing molecules and docking them to proteins. Everything runs locally in your browser.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="shared/theme.js?v=0.3.3"></script>
-<script src="shared/brand.js?v=0.3.3"></script>
-<script src="shared/versions.js?v=0.3.3"></script>
+<script src="shared/theme.js?v=0.4.3"></script>
+<script src="shared/brand.js?v=0.4.3"></script>
+<script src="shared/versions.js?v=0.4.3"></script>
 <meta name="color-scheme" content="dark light">
 <style>
 :root{
@@ -49,6 +49,7 @@ a.card:hover{border-color:var(--accent);transform:translateY(-2px)}
 .card p{margin:0;color:var(--muted);font-size:14px}
 .card .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:6px;font:12px var(--mono);color:var(--muted)}
 .chip{padding:2px 8px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font:500 11px var(--mono)}
+.chip.beta{background:rgba(230,163,61,.18);color:#E6A33D}
 .chip.off{background:var(--bg);color:var(--muted)}
 .card.soon{border-style:dashed;background:transparent}
 footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;display:flex;gap:6px 18px;flex-wrap:wrap}
@@ -71,7 +72,7 @@ code{font:12.5px var(--mono);background:var(--bg);padding:1px 5px;border-radius:
   <div id="groups"></div>
   <footer>
     <span><a href="changelog/">Changelog and References</a></span>
-    <span><a href="https://github.com/" id="repo">Source on GitHub</a></span>
+    <span>MIT License &copy; 2026 Caleb Kam</span>
   </footer>
 </div>
 <script>
@@ -85,11 +86,14 @@ const TOOLS = [
   { group: 'mol', name: cpName('dock'), href: 'dock/', icon: 'dock', tag: 'Build and dock',
     text: 'Convert a drawing to 3D, minimise its energy, define a binding pocket on a PDB structure and dock it. Poses, images, drug-likeness and kcal/mol or kJ/mol.' },
   { group: 'mol', name: cpName('nmr'), href: 'nmr/', icon: 'nmr', tag: 'Predict spectra',
-    text: 'Draw a molecule and see its predicted 1H and 13C NMR spectrum: shifts, multiplets, integrals and DEPT-135, at the field strength you choose.' }
+    text: 'Draw a molecule and see its predicted 1H and 13C NMR spectrum: shifts, multiplets, integrals and DEPT-135, at the field strength you choose.' },
+  { group: 'mol', name: cpName('shape'), href: 'shape/', icon: 'shape', tag: 'Lewis and VSEPR', status: 'Beta',
+    text: 'Draw a molecule and get its Lewis structure with resonance forms, VSEPR geometry and shape, polarity, and a 3D view showing lone pairs, bonds and pi electron clouds.' }
 ];
 const ICONS = {
   pen: '<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 7l3 3"/>',
   nmr: '<path d="M2 18h3l2-1 2 1 2-12 2 14 2-9 1.5 7H22"/>',
+  shape: '<path d="M12 3l8 5v8l-8 5-8-5V8z"/><path d="M12 3v18M4 8l16 8M20 8L4 16"/>',
   dock: '<path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><circle cx="12" cy="12" r="2.6"/>'
 };
 const groups = document.getElementById('groups');
@@ -101,8 +105,8 @@ for (const g of GROUPS) {
     const live = !!t.href, el = document.createElement(live ? 'a' : 'div'); el.className = 'card' + (live ? '' : ' soon'); if (live) el.href = t.href;
     const svg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[t.icon] || ICONS.dock) + '</svg>';
     el.innerHTML = '<div class="ic">' + svg + '</div><h3></h3><p></p><div class="foot"><span></span><span class="chip"></span></div>';
-    el.querySelector('h3').textContent = t.name; el.querySelector('p').textContent = t.text; const v = (window.CP_VERSIONS || {})[t.href.replace(/\/$/, '')]; el.querySelector('.foot span').textContent = t.tag + (v ? ' \u00b7 ' + window.cpVer(v) : '');
-    const chip = el.querySelector('.chip'); chip.textContent = live ? 'Open' : 'Coming soon'; if (!live) chip.classList.add('off'); box.append(el);
+    el.querySelector('h3').textContent = t.name; el.querySelector('p').textContent = t.text; el.querySelector('.foot span').textContent = t.tag;
+    const chip = el.querySelector('.chip'); chip.textContent = live ? (t.status || 'Stable') : 'Coming soon'; if (!live) chip.classList.add('off'); else if (t.status === 'Beta') chip.classList.add('beta'); box.append(el);
   }
   groups.append(sec);
 }
