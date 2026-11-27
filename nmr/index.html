@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
 <title data-brand="nmr">CompChemX NMR</title>
-<link rel="icon" href="../shared/favicon.svg?v=0.3.2" type="image/svg+xml">
+<link rel="icon" href="../shared/favicon.svg?v=0.3.3" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="../shared/theme.js?v=0.3.2"></script>
-<script src="../shared/brand.js?v=0.3.2"></script>
-<script src="../shared/versions.js?v=0.3.2"></script>
+<script src="../shared/theme.js?v=0.3.3"></script>
+<script src="../shared/brand.js?v=0.3.3"></script>
+<script src="../shared/versions.js?v=0.3.3"></script>
 <style>
 :root{
   --bg:#1A1918; --panel:#232220; --line:#3A3835; --fg:#ECE8E1; --muted:#9A958B;
@@ -68,7 +68,7 @@ input[type=range]{accent-color:var(--accent);width:110px}
 .chk{display:inline-flex;align-items:center;gap:5px;color:var(--fg)}
 #specbox{position:relative;min-height:0;border:1px solid var(--line);border-radius:10px;background:var(--stage);overflow:hidden}
 #spec{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
-#hint{position:absolute;left:10px;bottom:5px;color:var(--muted);font-size:11px;pointer-events:none}
+#hint{position:absolute;left:10px;right:10px;bottom:4px;color:var(--muted);font-size:11px;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 #tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 7px;font:12px var(--mono);white-space:nowrap}
 #msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:20px}
 #low{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr);gap:10px;min-height:0;min-width:0}
@@ -126,8 +126,8 @@ tr.row{cursor:pointer}tr.row:hover td{background:var(--accent-soft)}tr.row.sel t
   </div>
 </div>
 <div id="toast" hidden></div>
-<script src="nmr.js?v=0.3.2"></script>
-<script src="app.js?v=0.3.2"></script>
-<script src="../shared/nav.js?v=0.3.2"></script>
+<script src="nmr.js?v=0.3.3"></script>
+<script src="app.js?v=0.3.3"></script>
+<script src="../shared/nav.js?v=0.3.3"></script>
 </body>
 </html>

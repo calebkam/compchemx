@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title data-brand="platform" data-brand-suffix=" Changelog and References">CompChemX Changelog and References</title>
-<link rel="icon" href="../shared/favicon.svg?v=0.3.2" type="image/svg+xml">
+<link rel="icon" href="../shared/favicon.svg?v=0.3.3" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="../shared/theme.js?v=0.3.2"></script>
-<script src="../shared/brand.js?v=0.3.2"></script>
-<script src="../shared/versions.js?v=0.3.2"></script>
+<script src="../shared/theme.js?v=0.3.3"></script>
+<script src="../shared/brand.js?v=0.3.3"></script>
+<script src="../shared/versions.js?v=0.3.3"></script>
 <meta name="color-scheme" content="dark light">
 <style>
 :root{
@@ -89,6 +89,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:v
 /* Newest release first inside each tool. rel = [heading, date, [items]] */
 const LOG = [
   { id: "site", name: cpName("site"), about: "Browser-based computational chemistry: draw molecules, dock them into proteins and predict their NMR spectra. Everything runs in your browser.", rel: [
+    ["0.3.3", "2026-11-27", ["NMR: fixed the zoom hint overlapping the integral labels under the spectrum. The hint now has its own line below them."]],
     ["0.3.2", "2026-11-27", ["NMR: new page layout. The spectrum is resizable: drag the bar between the spectrum and the peak table (or use the arrow keys on it), and drag the bar between the editor and the spectrum to widen or narrow either side. Double-click a bar to reset it. Sizes are remembered.","NMR: the Draw editor now sits as a tall vertical column at its full natural size and scrolls when you hover over it (the mouse wheel over the drawing area still zooms the drawing)."]],
     ["0.3.1", "2026-11-27", ["NMR: much wider functional group coverage. Nitro groups are now handled in alkanes (separate values for CH3, CH2 and CH), alkenes, arenes and heteroarenes, polynitro compounds, nitrate esters, N-nitroso and nitroso, drawn either as N+(=O)O- or N(=O)=O. Electron-withdrawing ortho/para groups also shift aryl N-H and phenol O-H.","NMR: added azides, isocyanates, isothiocyanates, thiocyanates, oximes, hydrazones, imines, azo, N-oxides and quaternary ammonium, sulfonamides, sulfonyl chlorides and sulfonates, sulfoxides and sulfones (corrected), phosphates, silyl groups, boronic acids, OCF3, SCF3, SF5, thioamides and C=S, cumulenes, and CF3/CF2 carbons.","NMR: heavy-halogen carbon shifts (CH2Br2, CHBr3, CH3I, CCl4 ...) now follow the experimental trend. Metal counter-ions and halide ions are ignored. A note is shown when 19F or 31P couplings are not modelled."]],
     ["0.3.0", "2026-11-26", ["New tool, CompChemX NMR: draw a molecule in the embedded Draw editor and get a simulated 1H, 13C or DEPT-135 spectrum that updates as you draw.","NMR: empirical additive-increment predictor (alkyl, alkene and aromatic 1H increments, heteroaromatic ring base values, Grant-Paul 13C with substituent increments, carbonyl, nitrile and alkyne classes). Chemically equivalent atoms share one signal.","NMR: first-order multiplets (s, d, t, q, dd, td ...) with typical J values, Lorentzian line shapes, field strength 60 to 800 MHz, adjustable line width, solvent choice, optional O-H / N-H signals, integrals.","NMR: click a peak, table row or atom to highlight its partner; zoom by dragging or wheel; copy a journal-style peak report; export CSV and PNG."]],

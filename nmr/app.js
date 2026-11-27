@@ -80,7 +80,7 @@ function autoView() {
 
 /* ---------------- spectrum canvas ---------------- */
 const cv = $('#spec'), ctx = cv.getContext('2d');
-const PAD = { l: 14, r: 14, t: 26, b: 48 };
+const PAD = { l: 14, r: 14, t: 26, b: 76 };
 function size() { const b = $('#specbox'), d = Math.min(2, window.devicePixelRatio || 1); const w = b.clientWidth, h = b.clientHeight; if (cv.width !== w * d || cv.height !== h * d) { cv.width = w * d; cv.height = h * d; } ctx.setTransform(d, 0, 0, d, 0, 0); return [w, h]; }
 const xOf = (ppm, w) => PAD.l + (S.view[1] - ppm) / (S.view[1] - S.view[0]) * (w - PAD.l - PAD.r);
 const ppmOf = (px, w) => S.view[1] - (px - PAD.l) / (w - PAD.l - PAD.r) * (S.view[1] - S.view[0]);
@@ -141,7 +141,8 @@ function draw() {
   }
   if (S.nuc === '1H') { /* integration steps: one number per signal under the axis */
     ctx.fillStyle = accent; ctx.textAlign = 'center';
-    for (const s of sigs) { if (s.exch && (!S.ex || S.solv === 'D2O' || S.solv === 'CD3OD')) continue; if (s.shift < v0 || s.shift > v1) continue; const x = xOf(s.shift, w); ctx.fillText(s.n + 'H', x, base + 35); }
+    const rowEnd = [-1e9, -1e9];
+    for (const s of sigs.slice().sort((p, q) => q.shift - p.shift)) { if (s.exch && (!S.ex || S.solv === 'D2O' || S.solv === 'CD3OD')) continue; if (s.shift < v0 || s.shift > v1) continue; const x = xOf(s.shift, w), t = s.n + 'H', hw = ctx.measureText(t).width / 2; const row = x - hw > rowEnd[0] + 4 ? 0 : x - hw > rowEnd[1] + 4 ? 1 : 1; rowEnd[row] = x + hw; ctx.fillText(t, x, base + 35 + row * 12); }
   }
   S.geom = { w, h, zero, scale, base, top };
 }
