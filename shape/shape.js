@@ -21,15 +21,16 @@ const PI = Math.PI, R2D = 180 / PI, D2R = PI / 180;
 
 /* ve valence electrons, en Pauling electronegativity, r single-bond covalent radius (A), per period, val allowed valences */
 const EL = {
-  H: { ve: 1, en: 2.20, r: .32, per: 1 }, He: { ve: 2, en: 0, r: .46, per: 1 },
-  Be: { ve: 2, en: 1.57, r: .96, per: 2 }, B: { ve: 3, en: 2.04, r: .85, per: 2 }, C: { ve: 4, en: 2.55, r: .75, per: 2 },
-  N: { ve: 5, en: 3.04, r: .71, per: 2 }, O: { ve: 6, en: 3.44, r: .63, per: 2 }, F: { ve: 7, en: 3.98, r: .64, per: 2 }, Ne: { ve: 8, en: 0, r: .67, per: 2 },
-  Al: { ve: 3, en: 1.61, r: 1.21, per: 3 }, Si: { ve: 4, en: 1.90, r: 1.16, per: 3 }, P: { ve: 5, en: 2.19, r: 1.11, per: 3 }, S: { ve: 6, en: 2.58, r: 1.03, per: 3 },
-  Cl: { ve: 7, en: 3.16, r: .99, per: 3 }, Ar: { ve: 8, en: 0, r: .96, per: 3 },
-  Ge: { ve: 4, en: 2.01, r: 1.20, per: 4 }, As: { ve: 5, en: 2.18, r: 1.19, per: 4 }, Se: { ve: 6, en: 2.55, r: 1.16, per: 4 }, Br: { ve: 7, en: 2.96, r: 1.14, per: 4 }, Kr: { ve: 8, en: 3.00, r: 1.17, per: 4 },
-  Sn: { ve: 4, en: 1.96, r: 1.39, per: 5 }, Sb: { ve: 5, en: 2.05, r: 1.38, per: 5 }, Te: { ve: 6, en: 2.10, r: 1.35, per: 5 }, I: { ve: 7, en: 2.66, r: 1.33, per: 5 }, Xe: { ve: 8, en: 2.60, r: 1.40, per: 5 },
+  H: { ve: 1, en: 2.1, r: .32, per: 1 }, He: { ve: 2, en: 0, r: .46, per: 1 },
+  Be: { ve: 2, en: 1.5, r: .96, per: 2 }, B: { ve: 3, en: 2.0, r: .85, per: 2 }, C: { ve: 4, en: 2.5, r: .75, per: 2 },
+  N: { ve: 5, en: 3.0, r: .71, per: 2 }, O: { ve: 6, en: 3.5, r: .63, per: 2 }, F: { ve: 7, en: 4.0, r: .64, per: 2 }, Ne: { ve: 8, en: 0, r: .67, per: 2 },
+  Al: { ve: 3, en: 1.5, r: 1.21, per: 3 }, Si: { ve: 4, en: 1.8, r: 1.16, per: 3 }, P: { ve: 5, en: 2.2, r: 1.11, per: 3 }, S: { ve: 6, en: 2.5, r: 1.03, per: 3 },
+  Cl: { ve: 7, en: 3.0, r: .99, per: 3 }, Ar: { ve: 8, en: 0, r: .96, per: 3 },
+  Ge: { ve: 4, en: 1.8, r: 1.20, per: 4 }, As: { ve: 5, en: 2.0, r: 1.19, per: 4 }, Se: { ve: 6, en: 2.4, r: 1.16, per: 4 }, Br: { ve: 7, en: 2.8, r: 1.14, per: 4 }, Kr: { ve: 8, en: 3.00, r: 1.17, per: 4 },
+  Sn: { ve: 4, en: 1.8, r: 1.39, per: 5 }, Sb: { ve: 5, en: 1.9, r: 1.38, per: 5 }, Te: { ve: 6, en: 2.1, r: 1.35, per: 5 }, I: { ve: 7, en: 2.5, r: 1.33, per: 5 }, Xe: { ve: 8, en: 2.60, r: 1.40, per: 5 },
 };
 const VAL_BY_GROUP = { 0: [0], 1: [1], 2: [2], 3: [3], 4: [4], 5: [3, 5], 6: [2, 4, 6], 7: [1, 3, 5, 7], 8: [0, 2, 4, 6] };
+const NOBLE = { He: 1, Ne: 1, Ar: 1, Kr: 1, Xe: 1 };   /* no electronegativity value in the table; Kr and Xe keep a working value for polarity only */
 const known = el => !!EL[el];
 
 /* ------------------------------------------------------------------ molfile */
@@ -414,7 +415,7 @@ function analyze(molfileText, opt) {
   }
   const cen = X.reduce((s, p) => v3.add(s, p), [0, 0, 0]).map(v => v / G.n); X = X.map(p => v3.sub(p, cen));
   const atoms = analyse(G, R, X, lpWorld), pol = polarity(G, R, X);
-  const model = { atoms: G.atoms.map((a, i) => ({ el: a.el, x: X[i][0], y: X[i][1], z: X[i][2], q: a.chg, imp: a.imp, lp: lpWorld[i], rad: radWorld[i], lpCount: a.lp, en: EL[a.el].en })), bonds: G.bonds.map(b => ({ a: b.a, b: b.b, o: b.o, order: R.hybrid.bo[b.i] })) };
+  const model = { atoms: G.atoms.map((a, i) => ({ el: a.el, x: X[i][0], y: X[i][1], z: X[i][2], q: a.chg, imp: a.imp, lp: lpWorld[i], rad: radWorld[i], lpCount: a.lp, en: EL[a.el].en, enShown: !NOBLE[a.el] })), bonds: G.bonds.map(b => ({ a: b.a, b: b.b, o: b.o, order: R.hybrid.bo[b.i] })) };
   return { G, resonance: R, lewis: L, atoms, polarity: pol, model, method, warnings: warn, layout: layout2D(G, R.forms[0].state) };
 }
 

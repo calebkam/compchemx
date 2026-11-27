@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title data-brand="platform" data-brand-suffix=" Changelog and References">CompChemX Changelog and References</title>
-<link rel="icon" href="../shared/favicon.svg?v=0.4.4" type="image/svg+xml">
+<link rel="icon" href="../shared/favicon.svg?v=0.4.5" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="../shared/theme.js?v=0.4.4"></script>
-<script src="../shared/brand.js?v=0.4.4"></script>
-<script src="../shared/versions.js?v=0.4.4"></script>
+<script src="../shared/theme.js?v=0.4.5"></script>
+<script src="../shared/brand.js?v=0.4.5"></script>
+<script src="../shared/versions.js?v=0.4.5"></script>
 <meta name="color-scheme" content="dark light">
 <style>
 :root{
@@ -87,6 +87,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:v
 /* Newest release first inside each tool. rel = [heading, date, [items]] */
 const LOG = [
   { id: "site", name: cpName("site"), rel: [
+    ["0.4.5", "2026-11-27", ["Shape: electronegativity values changed to the Pauling values on the periodic table (for example H 2.1, C 2.5, N 3.0, O 3.5, F 4.0, Cl 3.0). Noble gases show no value.","Shape: the electronegativity label on hydrogen has a heavier outline and keeps its colour."]],
     ["0.4.4", "2026-11-27", ["Shape: bond dipole arrows are labelled δ+ at the tail and δ− at the head.","Shape: new Electronegativity option showing the Pauling value beside each atom."]],
     ["0.4.3", "2026-11-27", ["One version number for the whole platform; tools no longer show their own.","All tools: a clearer Home button, a filled accent button with a house icon at the start of each tool's header."]],
     ["0.4.2", "2026-11-27", ["Shape: the 3D display options are reordered (bond dipoles, net dipole, lone pairs, bond domains, pi clouds, angles, polyhedron, labels). On by default: both dipoles, lone pairs and labels.","Shape: atom labels are centred on their atoms."]],

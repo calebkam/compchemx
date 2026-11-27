@@ -18,9 +18,9 @@ function create(host, THREE) {
   const items = [], atomMeshes = [], v = (a) => new T.Vector3(a[0], a[1], a[2]);
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#888';
   function clear() { while (grp.children.length) { const o = grp.children.pop(); o.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) { if (x.material.map) x.material.map.dispose(); x.material.dispose(); } }); } atomMeshes.length = 0; }
-  function sprite(text, col) {
+  function sprite(text, col, heavy) {
     const c = document.createElement('canvas'), x = c.getContext('2d'); c.width = 256; c.height = 96; x.font = '600 44px IBM Plex Sans, system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.lineWidth = 9; x.strokeStyle = css('--stage') || '#000'; x.strokeText(text, 128, 48); x.fillStyle = col; x.fillText(text, 128, 48);
+    x.lineWidth = heavy ? 18 : 9; x.lineJoin = 'round'; x.strokeStyle = heavy ? '#15130f' : (css('--stage') || '#000'); x.strokeText(text, 128, 48); x.fillStyle = col; x.fillText(text, 128, 48);
     const m = new T.SpriteMaterial({ map: new T.CanvasTexture(c), depthTest: false, transparent: true }), s = new T.Sprite(m); s.scale.set(1.3, .49, 1); s.renderOrder = 10; return s;
   }
   function cyl(a, b, r, mat) { const d = b.clone().sub(a), L = d.length(), m = new T.Mesh(new T.CylinderGeometry(r, r, L, 14, 1, true), mat); m.position.copy(a.clone().add(b).multiplyScalar(.5)); m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize()); return m; }
@@ -36,9 +36,9 @@ function create(host, THREE) {
     A.forEach((a, i) => {
       const r = (RAD[a.el] || .45) * (ball ? 1 : .55) * (opt.style === 'wire' ? .3 : 1), m = new T.Mesh(new T.SphereGeometry(r, 24, 18), new T.MeshPhongMaterial({ color: COL[a.el] || 0xcc66cc, shininess: 60, emissive: i === sel ? 0x553322 : 0 }));
       m.position.copy(P[i]); m.userData.atom = i; grp.add(m); atomMeshes.push(m);
-      const showEl = opt.labels && a.el !== 'H', showEN = opt.en && a.en;
-      if (showEl || showEN) { const chg = a.q ? (Math.abs(a.q) > 1 ? Math.abs(a.q) : '') + (a.q > 0 ? '+' : '−') : '', txt = (showEl ? a.el + chg : '') + (showEl && showEN ? ' ' : '') + (showEN ? a.en.toFixed(2) : '');
-        const s = sprite(txt, showEN && !showEl ? '#ffd24d' : '#' + (COL[a.el] ? new T.Color(COL[a.el]).lerp(new T.Color(css('--fg')), .5).getHexString() : 'fff')); s.position.copy(P[i]); s.scale.multiplyScalar(.7 * (txt.length > 4 ? 1.25 : 1)); grp.add(s); }
+      const showEl = opt.labels && a.el !== 'H', showEN = opt.en && a.en && a.enShown !== false;
+      if (showEl || showEN) { const chg = a.q ? (Math.abs(a.q) > 1 ? Math.abs(a.q) : '') + (a.q > 0 ? '+' : '−') : '', txt = (showEl ? a.el + chg : '') + (showEl && showEN ? ' ' : '') + (showEN ? a.en.toFixed(1) : '');
+        const s = sprite(txt, showEN && !showEl ? '#ffd24d' : '#' + (COL[a.el] ? new T.Color(COL[a.el]).lerp(new T.Color(css('--fg')), .5).getHexString() : 'fff'), a.el === 'H'); s.position.copy(P[i]); s.scale.multiplyScalar(.7 * (txt.length > 4 ? 1.25 : 1)); grp.add(s); }
     });
     model.bonds.forEach(b => {
       const n = Math.max(1, Math.round(b.order)), a = P[b.a], c = P[b.b], d = c.clone().sub(a).normalize();
@@ -79,7 +79,7 @@ function create(host, THREE) {
     const arrow = (a, b, rad, color, head) => { const mat = new T.MeshPhongMaterial({ color }), d = b.clone().sub(a), L = d.length(); if (L < 1e-3) return; d.normalize();
       const tip = b.clone().addScaledVector(d, -head * 1.9); grp.add(cyl(a, tip, rad, mat)); const h = new T.Mesh(new T.ConeGeometry(head, head * 2.2, 16), mat); h.position.copy(b.clone().addScaledVector(d, -head * 1.1)); h.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d); grp.add(h); };
     if (opt.bdip && dp) dp.bonds.forEach(bd => {          /* one pink arrow per polar bond, beside the bond, pointing to the delta-minus end */
-      if (bd.d < .4) return; const a = P[bd.a], c = P[bd.b], d = c.clone().sub(a), L = d.length(); d.normalize();
+      if (bd.d < .5) return; const a = P[bd.a], c = P[bd.b], d = c.clone().sub(a), L = d.length(); d.normalize();
       let off = new T.Vector3(0, 1, 0).cross(d); if (off.lengthSq() < 1e-4) off = new T.Vector3(1, 0, 0).cross(d); off.normalize();
       const ra = (RAD[A[bd.a].el] || .4), rc = (RAD[A[bd.b].el] || .4), s0 = Math.min(L * .3, ra + .12), s1 = Math.min(L * .3, rc + .12), o = off.multiplyScalar(.42);
       arrow(a.clone().addScaledVector(d, s0).add(o), c.clone().addScaledVector(d, -s1).add(o), .035, 0xff4d9a, .1);
