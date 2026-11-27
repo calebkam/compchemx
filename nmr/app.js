@@ -11,14 +11,35 @@ const toast = m => { const t = $('#toast'); t.textContent = m; t.hidden = false;
 const BL = { frame: $('#bl') };
 const blWin = () => { try { return BL.frame.contentWindow; } catch (e) { return null; } };
 function molfile() { const w = blWin(); try { if (w && typeof w.molfile === 'function') return w.molfile(); } catch (e) {} return null; }
+/* Draw inside this page: keep Draw's tall, vertical layout at its natural size and let the column scroll. */
+function prepareDraw() {
+  const w = blWin(); try {
+    const d = w.document, st = d.createElement('style');
+    st.textContent = '@media (max-width:880px){html,body{height:auto!important}#app{height:auto!important;min-height:0!important;grid-template-rows:auto auto 560px auto auto!important}}';
+    d.head.appendChild(st);
+    /* wheel over Draw's toolbars and panels scrolls this column; over the drawing area it still zooms the drawing */
+    d.addEventListener('wheel', ev => {
+      if (ev.ctrlKey || ev.defaultPrevented) return; const t = ev.target; if (t.closest && t.closest('#stage,textarea,select,.box')) return;
+      const L = $('#left'); if (L.scrollHeight <= L.clientHeight) return; L.scrollTop += ev.deltaMode === 1 ? ev.deltaY * 32 : ev.deltaY; ev.preventDefault();
+    }, { passive: false });
+  } catch (e) {}
+}
+function fitDraw() {
+  const L = $('#left'), w = blWin(); if (!w) return; let h = L.clientHeight;
+  try {
+    if (L.clientWidth > 880) h = Math.max(L.clientHeight, 640);
+    else { const b = w.document.body, r = b.getBoundingClientRect(); h = Math.max(L.clientHeight, Math.ceil(r.height + parseFloat(w.getComputedStyle(b).marginTop || 0) + parseFloat(w.getComputedStyle(b).marginBottom || 0))); }
+  } catch (e) {}
+  if (Math.abs(BL.frame.offsetHeight - h) > 2) BL.frame.style.height = h + 'px';
+}
 function syncTheme() { const w = blWin(); try { if (w && w.document) w.document.documentElement.dataset.theme = dark() ? 'dark' : 'light'; } catch (e) {} }
 async function loadDraw() {
-  BL.frame.addEventListener('load', () => { syncTheme(); poll(); });
+  BL.frame.addEventListener('load', () => { syncTheme(); prepareDraw(); fitDraw(); poll(); });
   try { const r = await fetch('../draw/index.html'); if (!r.ok) throw new Error('HTTP ' + r.status); BL.frame.srcdoc = await r.text(); }
   catch (e) { $('#msg').textContent = 'The CompChemX Draw editor could not be loaded (' + e.message + ').'; }
 }
 function poll() { if (S.hold) return; const t = molfile(); if (t == null || t === S.last) return; S.last = t; update(); }
-setInterval(poll, 600);
+setInterval(() => { poll(); fitDraw(); }, 600);
 window.addEventListener('cp-theme', () => { syncTheme(); draw(); drawStructure(); });
 
 /* ---------------- prediction ---------------- */
@@ -258,6 +279,26 @@ $('#b-png').onclick = () => {
   c2.toBlob(b => save('compchemx-nmr-' + S.nuc + '.png', b), 'image/png');
 };
 
+/* ---------------- resizable panes ---------------- */
+const LS = { get(k) { try { return localStorage.getItem('cp-nmr-' + k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem('cp-nmr-' + k, v); } catch (e) {} } };
+const main = $('#main'), right = $('#right');
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function setLW(px) { px = clamp(px, 300, Math.min(main.clientWidth - 420, 1100)); main.style.setProperty('--lw', px + 'px'); LS.set('lw', px); fitDraw(); draw(); }
+function setLH(px) { px = clamp(px, 110, Math.max(150, right.clientHeight - $('#ctl').offsetHeight - 10 - 10 - 170)); right.style.setProperty('--lh', px + 'px'); LS.set('lh', px); draw(); }
+function splitter(el, axis) {
+  let start = 0, base = 0;
+  el.addEventListener('pointerdown', e => { start = axis === 'v' ? e.clientX : e.clientY; base = axis === 'v' ? $('#left').offsetWidth : $('#low').offsetHeight; el.setPointerCapture(e.pointerId); el.classList.add('drag'); document.body.classList.add('dragging'); e.preventDefault(); });
+  el.addEventListener('pointermove', e => { if (!el.classList.contains('drag')) return; if (axis === 'v') setLW(base + e.clientX - start); else setLH(base - (e.clientY - start)); });
+  const end = () => { el.classList.remove('drag'); document.body.classList.remove('dragging'); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  el.addEventListener('dblclick', () => { if (axis === 'v') { main.style.removeProperty('--lw'); LS.set('lw', ''); fitDraw(); } else { right.style.removeProperty('--lh'); LS.set('lh', ''); } draw(); });
+  el.addEventListener('keydown', e => { const k = e.key, d = e.shiftKey ? 60 : 20;
+    if (axis === 'v' && (k === 'ArrowLeft' || k === 'ArrowRight')) { setLW($('#left').offsetWidth + (k === 'ArrowRight' ? d : -d)); e.preventDefault(); }
+    if (axis === 'h' && (k === 'ArrowUp' || k === 'ArrowDown')) { setLH($('#low').offsetHeight + (k === 'ArrowUp' ? d : -d)); e.preventDefault(); } });
+}
+splitter($('#sp-v'), 'v'); splitter($('#sp-h'), 'h');
+{ const w = +LS.get('lw'), h = +LS.get('lh'); if (w) main.style.setProperty('--lw', clamp(w, 300, 1100) + 'px'); if (h) right.style.setProperty('--lh', clamp(h, 110, 900) + 'px'); }
+window.addEventListener('resize', () => { fitDraw(); });
 $('#exwrap').hidden = false;
 window.__nmr = { S, NMR, update, select };
 loadDraw();
