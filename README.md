@@ -1,6 +1,6 @@
 # CompChemX
 
-CompChemX is the platform. CCX Draw is the 2D drawing tool, CCX Dock is the docking tool and CCX NMR predicts NMR spectra.
+CompChemX is the platform. CCX Draw is the 2D drawing tool, CCX Dock is the docking tool and CCX NMRSim predicts NMR spectra and CCX NMRRead reads and processes NMR FIDs.
 
 Browser-based chemistry tools. Static files only: no build step, no server code, nothing leaves the browser. Dark by default with an orange accent; every page has a light/dark switch that is remembered (`localStorage`, key `cp-theme`).
 
@@ -9,7 +9,8 @@ Browser-based chemistry tools. Static files only: no build step, no server code,
 | Home | `index.html` | Landing page with a card for each tool |
 | CCX Draw | `draw/` | 2D chemical structure editor: offline IUPAC names, SMILES in and out, 3D view |
 | CCX Dock | `dock/` | Draw → 3D → minimise → define pocket → dock; kcal/mol or kJ/mol, pose images, drug-likeness |
-| CCX NMR | `nmr/` | Draw → predicted 1H, 13C and DEPT-135 spectra: shifts, multiplets, integrals, peak report, CSV and PNG export |
+| CCX NMRSim | `nmr/` | Draw → predicted 1H, 13C and DEPT-135 spectra: shifts, multiplets, integrals, peak report, CSV and PNG export |
+| CCX NMRRead | `nmrread/` | Bruker or JCAMP-DX FID → processed spectrum (FT, phasing, baseline, referencing), peaks, integrals, ACS-style report, SVG and PNG export |
 | CCX Shape | `shape/` | Draw → Lewis structure with resonance, VSEPR geometry and shape, polarity, and a 3D electron-domain viewer (beta) |
 | Changelog, Reference and Citation | `changelog/` | What changed (add an entry with every release), the references, and how to cite our work |
 | Shared | `shared/` | `theme.js`, `nav.js`, `versions.js` and one copy of three.js r128 |
@@ -45,7 +46,7 @@ The platform has one version number, in `shared/versions.js`. Add a matching ent
 
 **CCX Shape** loads `../draw/index.html` the same way and reads `molfile()`. `shape.js` is a plain, node-testable module (`node shape/test/shape.test.js`): molfile → graph with implicit hydrogens, Lewis lone pairs and formal charges, resonance by electron pushing, VSEPR tables, and a domain-repulsion 3D builder (ring systems use `dock/chem.js`). `viewer.js` is the three.js view and `app.js` the page. VSEPR is a model for main-group molecules: the angles are textbook-level, not computed, and transition-metal complexes are out of scope.
 
-**CCX NMR** loads `../draw/index.html` the same way as Dock and reads `molfile()`. `nmr.js` is a plain, node-testable module (`node nmr/test/nmr.test.js`): molfile → graph, ring and aromaticity perception, symmetry classes, 1H/13C increment tables, first-order multiplets and the Lorentzian synthesis. `app.js` is the page. It is an empirical predictor (about ±0.3 ppm for 1H, ±5 ppm for 13C on ordinary organics); it does not do second-order effects, diastereotopic splitting or conformers.
+**CCX NMRSim** loads `../draw/index.html` the same way as Dock and reads `molfile()`. `nmr.js` is a plain, node-testable module (`node nmr/test/nmr.test.js`): molfile → graph, ring and aromaticity perception, symmetry classes, 1H/13C increment tables, first-order multiplets and the Lorentzian synthesis. `app.js` is the page. It is an empirical predictor (about ±0.3 ppm for 1H, ±5 ppm for 13C on ordinary organics); it does not do second-order effects, diastereotopic splitting or conformers.
 
 ## Third-party code
 

@@ -1,4 +1,4 @@
-/* CCX NMR page logic: embeds CCX Draw, predicts with nmr.js, draws the spectrum, table and structure. */
+/* CCX NMRSim page logic: embeds CCX Draw, predicts with nmr.js, draws the spectrum, table and structure. */
 (function () {
 'use strict';
 const $ = s => document.querySelector(s);
@@ -171,15 +171,19 @@ function draw() {
     ctx.fillStyle = s.id === S.sel ? accent : fg; ctx.fillText(s.shift.toFixed(oneH ? 2 : 1), x, Math.max(pTop - 2, ty));
   }
   if (oneH) {
-    /* integral curve: a running integral across the top of the spectrum, one step per signal */
+    /* integral curves: one S-shaped step per signal, drawn across that signal only, height proportional to its hydrogen count */
     if (laneOn && S.cum) {
-      const inView = shown.filter(s => s.shift >= v0 && s.shift <= v1), visH = inView.reduce((t, s) => t + s.n, 0), allH = shown.reduce((t, s) => t + s.n, 0);
-      if (visH > 0 && allH > 0) {
-        const hY = S.cum[0] / allH, laneBase = top + laneH, pxPerH = laneH * 0.92 / visH, iEdge = Math.min(S.grid.N - 1, Math.max(0, Math.round((v1 - S.grid.lo) / dxg)));
-        ctx.save(); ctx.beginPath(); ctx.rect(PAD.l, top - 4, w - PAD.l - PAD.r, laneH + 6); ctx.clip();
-        ctx.strokeStyle = accent; ctx.lineWidth = 1.5; ctx.beginPath();
-        for (let px = PAD.l; px <= w - PAD.r; px++) { const i = Math.min(S.grid.N - 1, Math.max(0, Math.round((ppmOf(px, w) - S.grid.lo) / dxg))), f = (S.cum[i] - S.cum[iEdge]) / hY, y = Math.max(top - 2, laneBase - f * pxPerH); if (px === PAD.l) ctx.moveTo(px, y); else ctx.lineTo(px, y); }
-        ctx.stroke(); ctx.restore();
+      const inView = shown.filter(s => s.shift >= v0 && s.shift <= v1), maxN = inView.reduce((t, s) => Math.max(t, s.n), 0);
+      if (maxN > 0) {
+        const laneBase = top + laneH, pxPerH = laneH * 0.92 / maxN, N1 = S.grid.N - 1, idx = p => Math.min(N1, Math.max(0, Math.round((p - S.grid.lo) / dxg)));
+        ctx.save(); ctx.beginPath(); ctx.rect(PAD.l, top - 4, w - PAD.l - PAD.r, laneH + 6); ctx.clip(); ctx.strokeStyle = accent; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
+        for (const s of inView) {
+          const half = spanOf(s) + 0.06, hi = s.shift + half, lo = s.shift - half, iHi = idx(hi), iLo = idx(lo), tot = S.cum[iLo] - S.cum[iHi]; if (!(tot > 0)) continue;
+          const xl = xOf(hi, w), xr = xOf(lo, w), lead = 7; ctx.beginPath(); ctx.moveTo(Math.max(PAD.l, xl - lead), laneBase);
+          for (let px = Math.max(PAD.l, Math.floor(xl)); px <= Math.min(w - PAD.r, Math.ceil(xr)); px++) { const i = idx(ppmOf(px, w)), f = Math.min(1, Math.max(0, (S.cum[i] - S.cum[iHi]) / tot)); ctx.lineTo(px, laneBase - f * s.n * pxPerH); }
+          ctx.lineTo(Math.min(w - PAD.r, xr + lead), laneBase - s.n * pxPerH); ctx.stroke();
+        }
+        ctx.restore();
       }
     }
     /* braces and integrals under the axis */

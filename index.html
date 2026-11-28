@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title data-brand="platform">CompChemX</title>
-<link rel="icon" href="shared/favicon.svg?v=0.4.6" type="image/svg+xml">
+<link rel="icon" href="shared/favicon.svg?v=0.5.0" type="image/svg+xml">
 <meta name="description" content="CompChemX: browser-based tools for drawing molecules and docking them to proteins. Everything runs locally in your browser.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="shared/theme.js?v=0.4.6"></script>
-<script src="shared/brand.js?v=0.4.6"></script>
-<script src="shared/versions.js?v=0.4.6"></script>
+<script src="shared/theme.js?v=0.5.0"></script>
+<script src="shared/brand.js?v=0.5.0"></script>
+<script src="shared/versions.js?v=0.5.0"></script>
 <meta name="color-scheme" content="dark light">
 <style>
 :root{
@@ -79,21 +79,26 @@ code{font:12.5px var(--mono);background:var(--bg);padding:1px 5px;border-radius:
 <script>
 /* Add a tool: append one object to TOOLS. group decides the heading it appears under. */
 const GROUPS = [
-  { id: 'mol', title: 'Molecules' }
+  { id: 'gen', title: 'General Chemistry' },
+  { id: 'comp', title: 'Computational Chemistry' },
+  { id: 'nmr', title: 'NMR' }
 ];
 const TOOLS = [
-  { group: 'mol', name: cpName('draw'), href: 'draw/', icon: 'pen', tag: 'Draw',
+  { group: 'gen', name: cpName('draw'), href: 'draw/', icon: 'pen', tag: 'Draw',
     text: 'A 2D chemical structure editor. Draw rings, chains, charges and stereochemistry, get IUPAC names offline, copy or paste SMILES and see the structure in 3D.' },
-  { group: 'mol', name: cpName('dock'), href: 'dock/', icon: 'dock', tag: 'Build and dock',
+  { group: 'comp', name: cpName('dock'), href: 'dock/', icon: 'dock', tag: 'Build and dock',
     text: 'Convert a drawing to 3D, minimise its energy, define a binding pocket on a PDB structure and dock it. Poses, images, drug-likeness and kcal/mol or kJ/mol.' },
-  { group: 'mol', name: cpName('nmr'), href: 'nmr/', icon: 'nmr', tag: 'Predict spectra',
+  { group: 'nmr', name: cpName('nmr'), href: 'nmr/', icon: 'nmr', tag: 'Predict spectra',
     text: 'Draw a molecule and see its predicted 1H and 13C NMR spectrum: shifts, multiplets, integrals and DEPT-135, at the field strength you choose.' },
-  { group: 'mol', name: cpName('shape'), href: 'shape/', icon: 'shape', tag: 'Lewis and VSEPR', status: 'Beta',
+  { group: 'nmr', name: cpName('nmrread'), href: 'nmrread/', icon: 'nmrread', tag: 'Read FIDs', status: 'Beta',
+    text: 'Open a Bruker or JCAMP-DX FID, process it (Fourier transform, phasing, baseline, referencing) and export a publication-ready spectrum as SVG or PNG.' },
+  { group: 'gen', name: cpName('shape'), href: 'shape/', icon: 'shape', tag: 'Lewis and VSEPR', status: 'Beta',
     text: 'Draw a molecule and get its Lewis structure with resonance forms, VSEPR geometry and shape, polarity, and a 3D view showing lone pairs, bonds and pi electron clouds.' }
 ];
 const ICONS = {
   pen: '<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 7l3 3"/>',
   nmr: '<path d="M2 18h3l2-1 2 1 2-12 2 14 2-9 1.5 7H22"/>',
+  nmrread: '<path d="M3 20h18"/><path d="M5 20c0-6 1-9 2-9s1 5 2 5 1-12 3-12 1 14 3 14 1-6 2-6 1 3 1 8"/>',
   shape: '<path d="M12 3l8 5v8l-8 5-8-5V8z"/><path d="M12 3v18M4 8l16 8M20 8L4 16"/>',
   dock: '<path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><circle cx="12" cy="12" r="2.6"/>'
 };

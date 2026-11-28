@@ -1,5 +1,5 @@
 /* ============================ nmr.js ============================
-   CCX NMR: an empirical NMR predictor and spectrum simulator. No libraries, no network.
+   CCX NMRSim: an empirical NMR predictor and spectrum simulator. No libraries, no network.
 
    Input : a V2000 molfile (from CCX Draw).
    Output: predicted 1H and 13C shifts, first-order multiplets and a simulated spectrum.
