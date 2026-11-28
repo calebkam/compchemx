@@ -10,7 +10,7 @@ Browser-based chemistry tools. Static files only: no build step, no server code,
 | CCX Draw | `draw/` | 2D chemical structure editor: offline IUPAC names, SMILES in and out, 3D view |
 | CCX Dock | `dock/` | Draw → 3D → minimise → define pocket → dock; kcal/mol or kJ/mol, pose images, drug-likeness |
 | CCX NMRSim | `nmr/` | Draw → predicted 1H, 13C and DEPT-135 spectra: shifts, multiplets, integrals, peak report, CSV and PNG export |
-| CCX NMRRead | `nmrread/` | Bruker or JCAMP-DX FID → processed spectrum (FT, phasing, baseline, referencing), peaks, integrals, ACS-style report, SVG and PNG export |
+| CCX NMRRead | `nmrread/` | Bruker or JCAMP-DX FID → processed spectrum (FT, phasing, baseline, referencing), peaks, integrals, ACS-style report, expansions, solvent suppression, PDF, SVG and PNG export |
 | CCX Shape | `shape/` | Draw → Lewis structure with resonance, VSEPR geometry and shape, polarity, and a 3D electron-domain viewer (beta) |
 | Changelog, Reference and Citation | `changelog/` | What changed (add an entry with every release), the references, and how to cite our work |
 | Shared | `shared/` | `theme.js`, `nav.js`, `versions.js` and one copy of three.js r128 |

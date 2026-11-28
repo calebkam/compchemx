@@ -48,5 +48,22 @@ ok(JSON.stringify(R.decodeXYData(['0A1S'])) === '[11,11]' || true, 'DUP runs');
   const v = R.integrate(s.ppm, s.y, 4, 6);
   ok(Math.abs(v - 0.1 * Math.sqrt(Math.PI)) < 0.01, 'integral of a gaussian');
 }
+/* scene writers */
+{
+  const S = require('../scene.js');
+  const runs = S.rich('{^13}C NMR (400 MHz, CDCl{_3}) δ');
+  ok(runs.length === 5 && runs[0].k === 'sup' && runs[2].k === 'sub' && runs[4].k === 'sym', 'rich text runs');
+  const prims = [{ t: 'line', x1: 0, y1: 0, x2: 100, y2: 50, lw: 1, c: '#000', dash: [3, 3] }, { t: 'path', pts: [[0, 0], [10, 10], [20, 5]], lw: 1, c: '#123456' }, { t: 'text', x: 50, y: 20, size: 10, anchor: 'middle', runs: runs, c: '#000', rot: -90 }];
+  const mw = (s, z) => s.length * z * 0.5;
+  const svg = S.toSVG(prims, 200, 100, { font: 'Arial', mm: [50, 25] });
+  ok(/^<svg/.test(svg) && /<tspan/.test(svg) && /stroke-dasharray/.test(svg) && /width="50mm"/.test(svg), 'svg output');
+  const pdf = Buffer.from(S.toPDF(prims, 200, 100, { mm: [50, 25], mw })).toString('latin1');
+  ok(pdf.startsWith('%PDF-1.4') && pdf.trimEnd().endsWith('%%EOF'), 'pdf header and trailer');
+  const xr = +/startxref\n(\d+)/.exec(pdf)[1];
+  ok(pdf.substr(xr, 4) === 'xref', 'pdf startxref points at xref');
+  const offs = [...pdf.matchAll(/(\d{10}) 00000 n/g)].map(m => +m[1]);
+  ok(offs.length === 10 && offs.every((o, i) => pdf.substr(o, String(i + 1).length + 6) === (i + 1) + ' 0 obj'), 'pdf object offsets');
+  ok(/\/BaseFont \/Symbol/.test(pdf) && /\(d\) Tj/.test(pdf), 'pdf draws delta with Symbol');
+}
 console.log(pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

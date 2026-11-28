@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
 <title data-brand="nmrread">CCX NMRRead</title>
-<link rel="icon" href="../shared/favicon.svg?v=0.5.0" type="image/svg+xml">
+<link rel="icon" href="../shared/favicon.svg?v=0.5.1" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="../shared/theme.js?v=0.5.0"></script>
-<script src="../shared/brand.js?v=0.5.0"></script>
-<script src="../shared/versions.js?v=0.5.0"></script>
+<script src="../shared/theme.js?v=0.5.1"></script>
+<script src="../shared/brand.js?v=0.5.1"></script>
+<script src="../shared/versions.js?v=0.5.1"></script>
 <style>
 :root{
   --bg:#1A1918; --panel:#232220; --line:#3A3835; --fg:#ECE8E1; --muted:#9A958B;
@@ -43,7 +43,7 @@ button{cursor:pointer}
 .btn.sm{height:26px;padding:0 8px;font-size:12px}
 .btn.on{border-color:var(--accent);background:var(--accent-soft)}
 .btn.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:500}
-#main{display:grid;grid-template-columns:310px minmax(0,1fr);gap:10px;min-height:0}
+#main{display:grid;grid-template-columns:var(--sw,310px) 10px minmax(0,1fr);gap:0;min-height:0}
 #side{min-height:0;overflow-y:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:2px 12px 12px;scrollbar-width:thin}
 #side h3{margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .row{display:flex;align-items:center;gap:8px;margin:5px 0;flex-wrap:wrap}
@@ -57,14 +57,14 @@ input[type=number]{width:74px}
 #drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--fg)}
 #drop b{color:var(--fg);font-weight:600}
 #info{font-size:12px;color:var(--muted);font-family:var(--mono);white-space:pre-wrap;word-break:break-word}
-#stagecol{min-width:0;min-height:0;display:grid;grid-template-rows:minmax(220px,1fr) auto;gap:10px}
-#stage{position:relative;min-height:0;border:1px solid var(--line);border-radius:10px;background:var(--stage);overflow:hidden;touch-action:none}
-#stage svg{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+#stagecol{min-width:0;min-height:0;display:grid;grid-template-rows:minmax(200px,1fr) 10px var(--lh,230px);gap:0}
+#stage{user-select:none;-webkit-user-select:none;position:relative;min-height:0;border:1px solid var(--line);border-radius:10px;background:var(--stage);overflow:hidden;touch-action:none}
+#stage svg{pointer-events:none;user-select:none;-webkit-user-select:none;position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
 #msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:20px;pointer-events:none}
 #hint{position:absolute;left:10px;right:10px;bottom:4px;color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 #tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 7px;font:12px var(--mono);white-space:nowrap}
-#lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;max-height:230px}
-.card{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:auto;min-height:90px}
+#lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;min-height:0}
+.card{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:auto;min-height:0}
 .card h4{margin:0;padding:7px 10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);position:sticky;top:0;background:var(--panel);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
 .card h4 .sp{flex:1}
 table{border-collapse:collapse;width:100%;font-size:12px}
@@ -73,14 +73,24 @@ td.n{font-family:var(--mono)}
 td input{width:56px;height:22px}
 #acs{padding:8px 10px;font-size:12.5px;line-height:1.5;user-select:text}
 .x{border:0;background:transparent;color:var(--muted);padding:0 4px}.x:hover{color:var(--danger)}
+#chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.pill{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:12px;padding:1px 4px 1px 9px;font:11.5px var(--mono);background:var(--paper)}
+.split{position:relative;z-index:2;background:transparent;border-radius:4px;touch-action:none}
+.split::after{content:"";position:absolute;background:var(--line);border-radius:2px;transition:background .12s}
+.split:hover::after,.split.drag::after,.split:focus-visible::after{background:var(--accent)}
+.split.v{cursor:col-resize}.split.v::after{left:4px;top:calc(50% - 22px);width:3px;height:44px}
+.split.h{cursor:row-resize}.split.h::after{top:4px;left:calc(50% - 22px);height:3px;width:44px}
+body.dragging{user-select:none;cursor:inherit}
 #toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:8px 14px;z-index:9}
 @media (max-width:900px){
   #shell{height:auto}
-  #main{grid-template-columns:minmax(0,1fr)}
+  #main{grid-template-columns:minmax(0,1fr);gap:10px}
+  .split{display:none}
   #side{max-height:none;overflow:visible}
   #stage{height:420px}
-  #stagecol{grid-template-rows:auto auto}
-  #lower{grid-template-columns:minmax(0,1fr);max-height:none}
+  #stagecol{grid-template-rows:auto auto;gap:10px}
+  #lower{grid-template-columns:minmax(0,1fr)}
+  .card{max-height:300px}
 }
 @media (max-width:700px){#sub{display:none}}
 </style>
@@ -90,7 +100,7 @@ td input{width:56px;height:22px}
   <header id="top">
     <a class="brand" href="../" title="All tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2 18h3l2-1 2 1 2-12 2 14 2-9 1.5 7H22"/></svg><span data-brand="nmrread">CCX NMRRead</span></a>
     <span id="sub">Open an NMR FID, process it, and export a publication-ready spectrum.</span>
-    <button id="b-theme" class="btn" title="Switch light / dark">Theme</button>
+    <button id="b-theme" class="btn" title="Switch to light mode">Light mode</button>
   </header>
   <div id="main">
     <aside id="side">
@@ -109,6 +119,13 @@ td input{width:56px;height:22px}
       <div class="row"><label for="solv">Solvent peak</label><select id="solv"><option value="">—</option></select><button class="btn sm" id="b-solv">Set</button></div>
       <div class="row" id="flipwrap"><label class="chk"><input type="checkbox" id="flip"> Mirror axis</label></div>
 
+      <h3>Expansions and suppression</h3>
+      <div class="row"><button class="btn sm" id="b-addexp" title="Click, then drag across a region. Or hold Alt and drag.">Add expansion</button><button class="btn sm" id="b-addmask" title="Click, then drag across a region to flatten it">Suppress region</button></div>
+      <div class="row"><label class="chk"><input type="checkbox" id="m-solv"> Suppress solvent peak</label></div>
+      <div class="row"><label class="chk"><input type="checkbox" id="m-imp"> Suppress common impurities</label></div>
+      <div style="color:var(--muted);font-size:11.5px">Water, grease and silicone grease. Choose the solvent and reference the spectrum first. Check the result: a real peak under a suppressed region is removed too.</div>
+      <div id="chips"></div>
+
       <h3>Peaks and integrals</h3>
       <div class="row"><label for="snr">Peak threshold</label><input id="snr" type="range" min="3" max="200" step="1" value="60"><span class="v" id="snrv">60×</span></div>
       <div class="row"><button class="btn sm" id="b-autoint">Auto integrate</button><button class="btn sm" id="b-addint" title="Or Shift+drag on the spectrum">Add range</button><button class="btn sm" id="b-clrint">Clear</button></div>
@@ -123,12 +140,14 @@ td input{width:56px;height:22px}
       <div class="row"><label class="chk"><input type="checkbox" id="e-curve"> Integral curves</label><label class="chk"><input type="checkbox" id="e-info" checked> Frequency, solvent</label></div>
       <div class="row"><label for="etitle">Title</label><input type="text" id="etitle" placeholder="optional" style="flex:1"></div>
       <div class="row"><label class="chk"><input type="checkbox" id="e-bg"> White background (PNG)</label></div>
-      <div class="row"><label for="edpi">PNG</label><select id="edpi"><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></div>
-      <div class="row"><button class="btn pri" id="b-svg">Download SVG</button><button class="btn" id="b-png">Download PNG</button></div>
+      <div class="row"><label for="edpi">PNG size</label><select id="edpi"><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></div>
+      <div class="row"><button class="btn pri" id="b-pdf">Download PDF</button><button class="btn" id="b-svg">SVG</button><button class="btn" id="b-png">PNG</button></div>
       <div style="color:var(--muted);font-size:11.5px;margin-top:6px">Exports show the current view. Zoom first to choose the ppm window.</div>
     </aside>
+    <div class="split v" id="sp-v" role="separator" aria-orientation="vertical" aria-label="Resize the side panel" tabindex="0" title="Drag to resize · double-click to reset"></div>
     <section id="stagecol">
-      <div id="stage"><div id="msg">Open a FID to begin.</div><div id="tip" hidden></div><div id="hint">Drag: zoom · Wheel: height · Middle-drag or Ctrl+wheel: pan · Shift+drag: integrate · Double-click: reset</div></div>
+      <div id="stage"><div id="msg">Open a FID to begin.</div><div id="tip" hidden></div><div id="hint">Drag: zoom · Alt+drag: expansion · Shift+drag: integrate · Wheel: height · Middle-drag or Ctrl+wheel: pan · Double-click: reset</div></div>
+      <div class="split h" id="sp-h" role="separator" aria-orientation="horizontal" aria-label="Resize the tables" tabindex="0" title="Drag to resize · double-click to reset"></div>
       <div id="lower">
         <div class="card"><h4>Integrals <span class="sp"></span><span style="text-transform:none;letter-spacing:0;font-weight:400">H = hydrogens</span></h4><table><tbody id="itb"></tbody></table><div id="inone" style="padding:8px 10px;color:var(--muted)">None yet. Use Auto integrate or Shift+drag.</div></div>
         <div class="card"><h4>Report <span class="sp"></span><button class="btn sm" id="b-copy">Copy</button></h4><div id="acs">—</div></div>
@@ -137,8 +156,9 @@ td input{width:56px;height:22px}
   </div>
 </div>
 <div id="toast" hidden></div>
-<script src="read.js?v=0.5.0"></script>
-<script src="app.js?v=0.5.0"></script>
-<script src="../shared/nav.js?v=0.5.0"></script>
+<script src="read.js?v=0.5.1"></script>
+<script src="scene.js?v=0.5.1"></script>
+<script src="app.js?v=0.5.1"></script>
+<script src="../shared/nav.js?v=0.5.1"></script>
 </body>
 </html>

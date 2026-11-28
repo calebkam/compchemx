@@ -23,7 +23,14 @@
   if (hdr) hdr.insertBefore(hh, hdr.firstChild); else { hh.style.cssText += ';position:fixed;top:10px;left:10px;z-index:50'; document.body.appendChild(hh); }
   if (!document.getElementById('b-theme') && !document.getElementById('cp-theme-btn')) { /* tools without a theme button of their own */
     var host = hdr || document.body, n = document.createElement('div'); n.className = 'cp-nav';
-    n.innerHTML = '<button type="button" id="cp-theme-btn" title="Switch dark / light">Theme</button>';
-    host.appendChild(n); n.querySelector('button').addEventListener('click', function () { window.CPTheme.toggle(); });
+    n.innerHTML = '<button type="button" id="cp-theme-btn" title="Switch dark / light">Light mode</button>';
+    host.appendChild(n);
+  }
+  /* The theme button reads "Light mode" while dark and "Dark mode" while light (as on the home page). A button that has no handler of its own gets one here. */
+  var tb = document.getElementById('b-theme') || document.getElementById('cp-theme-btn');
+  if (tb) {
+    if (!tb.onclick) tb.addEventListener('click', function () { window.CPTheme.toggle(); });
+    var sync = function () { var dark = document.documentElement.dataset.theme !== 'light'; tb.textContent = dark ? 'Light mode' : 'Dark mode'; tb.title = dark ? 'Switch to light mode' : 'Switch to dark mode'; };
+    new MutationObserver(sync).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); sync();
   }
 })();
