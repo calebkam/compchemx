@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
 <title data-brand="nmrread">CCX NMRRead</title>
-<link rel="icon" href="../shared/favicon.svg?v=0.5.1" type="image/svg+xml">
+<link rel="icon" href="../shared/favicon.svg?v=0.5.2" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="../shared/theme.js?v=0.5.1"></script>
-<script src="../shared/brand.js?v=0.5.1"></script>
-<script src="../shared/versions.js?v=0.5.1"></script>
+<script src="../shared/theme.js?v=0.5.2"></script>
+<script src="../shared/brand.js?v=0.5.2"></script>
+<script src="../shared/versions.js?v=0.5.2"></script>
 <style>
 :root{
   --bg:#1A1918; --panel:#232220; --line:#3A3835; --fg:#ECE8E1; --muted:#9A958B;
@@ -131,9 +131,8 @@ body.dragging{user-select:none;cursor:inherit}
       <div class="row"><button class="btn sm" id="b-autoint">Auto integrate</button><button class="btn sm" id="b-addint" title="Or Shift+drag on the spectrum">Add range</button><button class="btn sm" id="b-clrint">Clear</button></div>
 
       <h3>Publication export</h3>
-      <div class="row"><label for="ew">Width</label><select id="ew"><option value="85">Single column, 85 mm</option><option value="120">120 mm</option><option value="180" selected>Double column, 180 mm</option></select></div>
-      <div class="row"><label for="eh">Height</label><select id="eh"><option value="0.35">Wide</option><option value="0.5" selected>Standard</option><option value="0.7">Tall</option></select></div>
-      <div class="row"><label for="efont">Font</label><select id="efont"><option value="Arial, Helvetica, sans-serif">Arial</option><option value="'Times New Roman', Times, serif">Times</option><option value="'IBM Plex Sans', Arial, sans-serif">IBM Plex Sans</option></select><input type="number" id="efs" value="8" min="5" max="14" step="0.5" title="Font size (pt)"><span style="color:var(--muted)">pt</span></div>
+      <div class="row"><label for="epage">Page</label><select id="epage"><option value="a4l" selected>A4 landscape</option><option value="a4p">A4 portrait</option><option value="prev">Same shape as the preview</option><option value="s85">Single column, 85 mm</option><option value="d180">Double column, 180 mm</option></select></div>
+      <div class="row"><label for="efont">Font</label><select id="efont"><option value="Arial, Helvetica, sans-serif">Arial</option><option value="'Times New Roman', Times, serif">Times</option><option value="'IBM Plex Sans', Arial, sans-serif">IBM Plex Sans</option></select><input type="number" id="efs" value="10" min="5" max="14" step="0.5" title="Font size (pt)"><span style="color:var(--muted)">pt</span></div>
       <div class="row"><label for="elw">Line width</label><input id="elw" type="range" min="0.3" max="2" step="0.1" value="0.75"><span class="v" id="elwv">0.75 pt</span></div>
       <div class="row"><label for="ecol">Trace colour</label><select id="ecol"><option value="#000000">Black</option><option value="#1F4E9A">Blue</option><option value="#C15F3C">Orange</option></select></div>
       <div class="row"><label class="chk"><input type="checkbox" id="e-peaks" checked> Peak labels</label><label class="chk"><input type="checkbox" id="e-ints" checked> Integrals</label></div>
@@ -142,7 +141,7 @@ body.dragging{user-select:none;cursor:inherit}
       <div class="row"><label class="chk"><input type="checkbox" id="e-bg"> White background (PNG)</label></div>
       <div class="row"><label for="edpi">PNG size</label><select id="edpi"><option value="300">300 dpi</option><option value="600" selected>600 dpi</option><option value="1200">1200 dpi</option></select></div>
       <div class="row"><button class="btn pri" id="b-pdf">Download PDF</button><button class="btn" id="b-svg">SVG</button><button class="btn" id="b-png">PNG</button></div>
-      <div style="color:var(--muted);font-size:11.5px;margin-top:6px">Exports show the current view. Zoom first to choose the ppm window.</div>
+      <div style="color:var(--muted);font-size:11.5px;margin-top:6px">Exports show what the preview shows: the same ppm window, height, labels, expansions and integrals.</div>
     </aside>
     <div class="split v" id="sp-v" role="separator" aria-orientation="vertical" aria-label="Resize the side panel" tabindex="0" title="Drag to resize · double-click to reset"></div>
     <section id="stagecol">
@@ -156,9 +155,9 @@ body.dragging{user-select:none;cursor:inherit}
   </div>
 </div>
 <div id="toast" hidden></div>
-<script src="read.js?v=0.5.1"></script>
-<script src="scene.js?v=0.5.1"></script>
-<script src="app.js?v=0.5.1"></script>
-<script src="../shared/nav.js?v=0.5.1"></script>
+<script src="read.js?v=0.5.2"></script>
+<script src="scene.js?v=0.5.2"></script>
+<script src="app.js?v=0.5.2"></script>
+<script src="../shared/nav.js?v=0.5.2"></script>
 </body>
 </html>

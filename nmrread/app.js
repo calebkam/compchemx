@@ -460,11 +460,23 @@
   $('b-copy').onclick = () => { if (!S.report) return; (navigator.clipboard ? navigator.clipboard.writeText(S.report) : Promise.reject()).then(() => toast('Copied'), () => { const r = document.createRange(); r.selectNodeContents($('acs')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Press Ctrl+C to copy'); }); };
 
   /* ---------- export ---------- */
+  function shift(prims, dx, dy) {
+    return prims.map(p => p.t === 'line' ? Object.assign({}, p, { x1: p.x1 + dx, x2: p.x2 + dx, y1: p.y1 + dy, y2: p.y2 + dy }) : p.t === 'path' ? Object.assign({}, p, { pts: p.pts.map(q => [q[0] + dx, q[1] + dy]) }) : Object.assign({}, p, { x: p.x + dx, y: p.y + dy }));
+  }
+  function pageMM() {
+    const v = $('epage').value;
+    if (v === 'a4l') return { mm: [297, 210], m: 10 };
+    if (v === 'a4p') return { mm: [210, 297], m: 10 };
+    if (v === 's85') return { mm: [85, Math.round(85 * 0.6)], m: 0 };
+    if (v === 'd180') return { mm: [180, 108], m: 0 };
+    const r = stage.clientHeight - 22 > 0 ? (stage.clientHeight - 22) / stage.clientWidth : 0.5;
+    return { mm: [180, Math.round(180 * r)], m: 0 };
+  }
   function exportScene() {
-    const mmW = +$('ew').value, mmH = Math.round(mmW * +$('eh').value), k = 96 / 25.4, W = Math.round(mmW * k), H = Math.round(mmH * k), pt = 96 / 72;
-    const font = $('efont').value; mw.font = font;
-    const b = build(W, H, { fs: +$('efs').value * pt, lw: +$('elw').value * pt, col: $('ecol').value, fg: '#000000', labels: $('e-peaks').checked, ints: $('e-ints').checked, curve: $('e-curve').checked, info: $('e-info').checked, title: $('etitle').value });
-    return { prims: b.prims, W, H, mm: [mmW, mmH], font };
+    const pg = pageMM(), k = 96 / 25.4, pt = 96 / 72, font = $('efont').value; mw.font = font;
+    const W = Math.round(pg.mm[0] * k), H = Math.round(pg.mm[1] * k), m = Math.round(pg.m * k);
+    const b = build(W - 2 * m, H - 2 * m, { fs: +$('efs').value * pt, lw: +$('elw').value * pt, col: $('ecol').value, fg: '#000000', labels: $('e-peaks').checked, ints: $('e-ints').checked, curve: $('e-curve').checked, info: $('e-info').checked, title: $('etitle').value });
+    return { prims: m ? shift(b.prims, m, m) : b.prims, W, H, mm: pg.mm, font };
   }
   function save(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
   const baseName = () => (S.title || 'spectrum').replace(/\.[^.]*$/, '').replace(/[^\w.-]+/g, '_').replace(/_?fid$/i, '') || 'spectrum';

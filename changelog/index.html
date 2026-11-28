@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title data-brand="platform" data-brand-suffix=" Changelog and References">CompChemX Changelog and References</title>
-<link rel="icon" href="../shared/favicon.svg?v=0.5.1" type="image/svg+xml">
+<link rel="icon" href="../shared/favicon.svg?v=0.5.2" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="../shared/theme.js?v=0.5.1"></script>
-<script src="../shared/brand.js?v=0.5.1"></script>
-<script src="../shared/versions.js?v=0.5.1"></script>
+<script src="../shared/theme.js?v=0.5.2"></script>
+<script src="../shared/brand.js?v=0.5.2"></script>
+<script src="../shared/versions.js?v=0.5.2"></script>
 <meta name="color-scheme" content="dark light">
 <style>
 :root{
@@ -88,6 +88,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:v
 /* Newest release first inside each tool. rel = [heading, date, [items]] */
 const LOG = [
   { id: "site", name: cpName("site"), rel: [
+    ["0.5.2", "2026-11-28", ["NMRRead: exports match the preview (same ppm window, height, labels, expansions and integrals). The default page is A4 landscape; A4 portrait, the preview's own shape, and 85 mm and 180 mm journal widths are also available."]],
     ["0.5.1", "2026-11-28", ["NMRRead: export to PDF (vector, with the page size set by the export width), now the default export; SVG and PNG remain.","NMRRead: expansions. Choose Add expansion (or hold Alt) and drag across a region; up to four insets are drawn above the spectrum with dashed connectors, and appear in every export.","NMRRead: suppress the solvent peak and common impurities (water, grease, silicone grease), or flatten any region by dragging; the tallest remaining peak sets the height.","NMRRead: the spectrum keeps a fixed area. The side panel and the tables below can be resized by dragging their bars (double-click resets).","NMRRead: fixed the theme button, and dragging across the spectrum no longer highlights text.","Platform: the theme button reads Light mode or Dark mode on every page, as on the home page. It now works in Shape as well.","Home page: CCX Molecular Dynamics added under Computational Chemistry with a yellow Coming Soon chip."]],
     ["0.5.0", "2026-11-28", ["Home page: tools are grouped as General Chemistry (Draw, Shape), Computational Chemistry (Dock) and NMR (NMRSim, NMRRead).","Renamed CCX NMR to CCX NMRSim.","New tool, CCX NMRRead (beta): open an NMR FID and produce a publication-ready spectrum. Reads Bruker folders (fid and acqus), JCAMP-DX files (FID or spectrum) and two-column text spectra. Removes the Bruker digital filter, applies line broadening and zero filling, Fourier transforms, and phases (automatic or manual order 0 and 1). Baseline correction, referencing by peak or solvent, peak picking, integration with an H scale, and an ACS-style peak report. Exports SVG and PNG (300 to 1200 dpi) at single- or double-column width with font, line width, colour and label options.","NMRSim: integral curves are drawn per signal, each as its own step, instead of one curve across the whole spectrum.","Platform: the browser tab icon is the logo (hexagon with cube) again."]],
     ["0.4.6", "2026-11-28", ["NMR: the mouse wheel now changes the peak height; dragging with the middle button (wheel held down) pans along the field axis; a plain drag still zooms. Reset view restores height and range.","NMR: expansions. Choose Add expansion (or hold Alt) and drag across a region to show it magnified in an inset above the spectrum, with dashed connectors to the region. Up to four insets, each removed with its ×.","NMR: integration is shown with a brace under each signal and an integral curve across the top of the spectrum, each switchable."]],
